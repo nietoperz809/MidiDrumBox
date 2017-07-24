@@ -6,13 +6,17 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Test
+public class Drumbox
 {
     private final Sequence newSeq = new Sequence(0.0f,960);
     private final Track track = newSeq.createTrack();
     private final HashMap<Long,MidiEvent> hmap = new HashMap<>();
 
-    public Test() throws Exception
+    /**
+     * Constructor: Build complete frame and show it
+     * @throws Exception If smth. gone wrong
+     */
+    private Drumbox () throws Exception
     {
         JFrame frame = new JFrame("MIDI Drumbox");
         frame.setLayout(new GridLayout(11,1));
@@ -29,7 +33,7 @@ public class Test
 
     public static void main (String[] args) throws Exception
     {
-        new Test();
+        new Drumbox();
     }
 
     private final String[] instrumentNames = new String[]
@@ -97,6 +101,10 @@ public class Test
             "87 Open Surdo (GM2)"
     };
 
+    /**
+     * Create control panel
+     * @return The panel
+     */
     private JPanel makeControlP ()
     {
         JPanel panel = new JPanel();
@@ -138,6 +146,11 @@ public class Test
         return panel;
     }
 
+    /**
+     * Put event into hashmap and track
+     * @param key Event key
+     * @param ev The Event himself
+     */
     private void putEvent (long key, MidiEvent ev)
     {
         System.out.println("put: "+key);
@@ -145,37 +158,64 @@ public class Test
         hmap.put(key, ev);
     }
 
+    /**
+     * Delete Event from hashmap and track
+     * @param key Event key
+     */
     private void delEvent (long key)
     {
-        System.out.println("del: "+key);
         MidiEvent e1 = hmap.remove(key);
         if (e1 != null)
         {
+            System.out.println("del: "+key);
             track.remove(e1);
         }
     }
 
+    /**
+     * Reads instrument number from selected Combobox item and store into Integer object
+     * @param combo Source
+     * @param instrument Destination
+     */
     private void readFirstTwo(JComboBox combo, AtomicInteger instrument)
     {
         String s = ((String)combo.getSelectedItem()).substring(0,2);
         instrument.set(Integer.parseInt(s));
     }
 
-    private JPanel makeJP (int tracknumber)
+    /**
+     * Create Panel for one Instrument
+     * @param lineNumber Y-coordinate of panel
+     * @return
+     */
+    private JPanel makeJP (int lineNumber)
     {
         JPanel panel = new JPanel();
+        panel.setBackground(Color.BLACK);
         panel.setLayout(new FlowLayout(FlowLayout.LEFT, 1, 1));
 
         UIManager.put("ToggleButton.select", Color.RED);
 
         AtomicInteger instrument = new AtomicInteger(-1);
         JComboBox combo = new JComboBox(instrumentNames);
-        combo.setSelectedIndex(tracknumber);
+        combo.setSelectedIndex(lineNumber);
         readFirstTwo(combo, instrument);
         panel.add(combo);
         combo.addActionListener(e ->
         {
             readFirstTwo(combo, instrument);
+        });
+
+        JButton but = new JButton("Clear");
+        panel.add(but);
+        but.addActionListener(e ->
+        {
+            for (int i=2; i<34; i++)
+            {
+                JToggleButton b1 = (JToggleButton)panel.getComponent(i);
+                if (b1.isSelected())
+                    b1.doClick();
+            }
         });
 
         for (int s = 0; s < 32; s++)
@@ -186,7 +226,7 @@ public class Test
             jb.addActionListener(e ->
             {
                 long tick = jb.getMnemonic()*200;
-                long event_id = tracknumber*100+jb.getMnemonic()*2;
+                long event_id = lineNumber*100+jb.getMnemonic()*2;
                 long event_id2 = event_id+1;
                 if (jb.isSelected())
                 {
@@ -209,9 +249,8 @@ public class Test
                     delEvent(event_id);
                     delEvent(event_id2);
                 }
-                System.out.println(tracknumber+" -- "+jb.getMnemonic()+" -- "+jb.isSelected());
             });
-            jb.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            jb.setBorder(BorderFactory.createLineBorder(Color.GREEN));
             panel.add(jb);
         }
         return panel;
