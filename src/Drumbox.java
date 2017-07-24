@@ -11,7 +11,6 @@ public class Drumbox
     private final Sequence newSeq = new Sequence(0.0f,960);
     private final Track track = newSeq.createTrack();
     private final HashMap<Long,MidiEvent> hmap = new HashMap<>();
-
     /**
      * Constructor: Build complete frame and show it
      * @throws Exception If smth. gone wrong
@@ -33,6 +32,7 @@ public class Drumbox
 
     public static void main (String[] args) throws Exception
     {
+        UIManager.put("ToggleButton.select", Color.RED);
         new Drumbox();
     }
 
@@ -109,16 +109,21 @@ public class Drumbox
     {
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        //panel.setMinimumSize(new Dimension(600,10));
+
+        JSlider slider;
+        slider = new JSlider();
+        slider.setMinimum(100);
+        slider.setMaximum(2000);
 
         JButton b1 = new JButton("Save");
         panel.add(b1);
         b1.addActionListener(e ->
         {
+            Sequence sq = adjustTimings(slider);
             File f = new File("c:\\midfile.mid");
             try
             {
-                MidiSystem.write(newSeq, 1, f);
+                MidiSystem.write(sq, 1, f);
             }
             catch (IOException e1)
             {
@@ -129,11 +134,12 @@ public class Drumbox
         panel.add(b2);
         b2.addActionListener(e ->
         {
+            Sequence sq = adjustTimings(slider);
             try
             {
                 Sequencer sequencer = MidiSystem.getSequencer();
                 sequencer.open();
-                sequencer.setSequence(newSeq);
+                sequencer.setSequence(sq);
                 Thread.sleep(500);
                 sequencer.start();
             }
@@ -142,6 +148,8 @@ public class Drumbox
                 System.out.println(ex);
             }
         });
+
+        panel.add(slider);
 
         return panel;
     }
@@ -184,9 +192,48 @@ public class Drumbox
     }
 
     /**
+     * Create a Sequence that can be played or saved
+     * @param slider Speed slider
+     * @return The sequence
+     */
+    private Sequence adjustTimings (JSlider slider)
+    {
+        Sequence seq = null;
+        try
+        {
+            seq = new Sequence(newSeq.getDivisionType(), newSeq.getResolution());
+        }
+        catch (InvalidMidiDataException e)
+        {
+            return null;
+        }
+        Track tr = seq.createTrack();
+        for (int s=0; s<track.size(); s++)
+        {
+            MidiEvent ev = track.get(s);
+            MidiEvent clone = new MidiEvent(ev.getMessage(),0);
+            long tick = ev.getTick()*slider.getValue();
+            MidiMessage mm = ev.getMessage();
+            if (!(mm instanceof ShortMessage))
+                continue;
+            ShortMessage msg = (ShortMessage)mm;
+            if (msg.getCommand() == ShortMessage.NOTE_ON)
+            {
+                clone.setTick(tick);
+            }
+            else
+            {
+                clone.setTick(tick+40);
+            }
+            tr.add(clone);
+        }
+        return seq;
+    }
+
+    /**
      * Create Panel for one Instrument
      * @param lineNumber Y-coordinate of panel
-     * @return
+     * @return The panel
      */
     private JPanel makeJP (int lineNumber)
     {
@@ -194,10 +241,8 @@ public class Drumbox
         panel.setBackground(Color.BLACK);
         panel.setLayout(new FlowLayout(FlowLayout.LEFT, 1, 1));
 
-        UIManager.put("ToggleButton.select", Color.RED);
-
         AtomicInteger instrument = new AtomicInteger(-1);
-        JComboBox combo = new JComboBox(instrumentNames);
+        JComboBox<String> combo = new JComboBox<>(instrumentNames);
         combo.setSelectedIndex(lineNumber);
         readFirstTwo(combo, instrument);
         panel.add(combo);
@@ -225,7 +270,6 @@ public class Drumbox
             jb.setPreferredSize(new Dimension(20,20));
             jb.addActionListener(e ->
             {
-                long tick = jb.getMnemonic()*200;
                 long event_id = lineNumber*100+jb.getMnemonic()*2;
                 long event_id2 = event_id+1;
                 if (jb.isSelected())
@@ -236,8 +280,8 @@ public class Drumbox
                                 9, instrument.get(), 127);
                         ShortMessage off = new ShortMessage(ShortMessage.NOTE_OFF,
                                 9, instrument.get(), 0);
-                        putEvent (event_id, new MidiEvent(on, tick));
-                        putEvent (event_id2, new MidiEvent(off, tick+200));
+                        putEvent (event_id, new MidiEvent(on, jb.getMnemonic()));
+                        putEvent (event_id2, new MidiEvent(off, jb.getMnemonic()));
                     }
                     catch (Exception e1)
                     {
