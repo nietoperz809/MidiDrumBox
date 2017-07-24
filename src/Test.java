@@ -14,7 +14,7 @@ public class Test
 
     public Test() throws Exception
     {
-        JFrame frame = new JFrame("JFrame Example");
+        JFrame frame = new JFrame("MIDI Drumbox");
         frame.setLayout(new GridLayout(11,1));
         for (int s=0; s<10; s++)
             frame.add(makeJP(s));
@@ -186,22 +186,18 @@ public class Test
             jb.addActionListener(e ->
             {
                 long tick = jb.getMnemonic()*200;
-                long offtick = tick+200;
-                long key1 = tracknumber*100+jb.getMnemonic();
-                long key2 = tracknumber*100+jb.getMnemonic();
+                long event_id = tracknumber*100+jb.getMnemonic()*2;
+                long event_id2 = event_id+1;
                 if (jb.isSelected())
                 {
-                    
                     try
                     {
                         ShortMessage on = new ShortMessage(ShortMessage.NOTE_ON,
                                 9, instrument.get(), 127);
                         ShortMessage off = new ShortMessage(ShortMessage.NOTE_OFF,
                                 9, instrument.get(), 0);
-                        MidiEvent evon = new MidiEvent(on, tick);
-                        MidiEvent evoff = new MidiEvent(off, offtick);
-                        putEvent (key1, evon);
-                        putEvent (key2, evoff);
+                        putEvent (event_id, new MidiEvent(on, tick));
+                        putEvent (event_id2, new MidiEvent(off, tick+200));
                     }
                     catch (Exception e1)
                     {
@@ -210,13 +206,12 @@ public class Test
                 }
                 else
                 {
-                    delEvent(key1);
-                    delEvent(key2);
-                    jb.setOpaque(false);
+                    delEvent(event_id);
+                    delEvent(event_id2);
                 }
                 System.out.println(tracknumber+" -- "+jb.getMnemonic()+" -- "+jb.isSelected());
             });
-            jb.setBorder(BorderFactory.createEmptyBorder());
+            jb.setBorder(BorderFactory.createLineBorder(Color.BLACK));
             panel.add(jb);
         }
         return panel;
