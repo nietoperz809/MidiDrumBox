@@ -35,7 +35,7 @@ public class DesktopFrame extends JFrame
                 "Pattern #" + Drumbox.instanceNumber, true, false, true, true);
         try
         {
-            Drumbox drumbox = new Drumbox();
+            Drumbox drumbox = new Drumbox(frame);
             allBoxes.add(drumbox);
             frame.add(drumbox, BorderLayout.CENTER); // add panel
             frame.pack(); // set internal frame to size of contents

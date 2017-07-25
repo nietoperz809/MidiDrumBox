@@ -1,6 +1,8 @@
 import javax.sound.midi.*;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -12,9 +14,11 @@ public class Drumbox extends JPanel
     private static final ImageIcon iconPlay = new ImageIcon(Helper.loadImageFromRessource("play.png"));
     private static final ImageIcon iconStop = new ImageIcon(Helper.loadImageFromRessource("stop.png"));
     private final Sequencer sequencer;
+    private final JInternalFrame mdiClient;
 
-    private static final int STEPS = 32;
+    private int drumSteps = 32; // Number of drumSteps
     private static final int LINES = 10;
+    private JPanel[] drumPanels = new JPanel[LINES];
     private static final int NOTELENGTH = 40;
     static private final String[] instrumentNames = new String[]
     {
@@ -87,15 +91,77 @@ public class Drumbox extends JPanel
      * Constructor: Build complete frame and show it
      * @throws Exception If smth. gone wrong
      */
-    public Drumbox () throws Exception
+    public Drumbox (JInternalFrame frame) throws Exception
     {
+        mdiClient = frame;
         sequencer = MidiSystem.getSequencer();
         setLayout(new GridLayout(11,1));
         for (int s=0; s<LINES; s++)
-            add(makeDrumLinePanel(s));
+        {
+            drumPanels[s] = makeDrumLinePanel(s);
+            add(drumPanels[s]);
+        }
         add (makeControlPanel());
         setVisible(true);
         instanceNumber++;
+    }
+
+    private void hideShowButton (int s, boolean show)
+    {
+        for (JPanel p : drumPanels)
+        {
+            Component[] comps = p.getComponents();
+            for (Component c : comps)
+            {
+                if (c instanceof JToggleButton)
+                {
+                    JToggleButton tb = (JToggleButton) c;
+                    if (tb.getMnemonic() == s)
+                    {
+                        tb.setVisible(show);
+                        break;
+                    }
+                }
+            }
+        }
+        mdiClient.pack();
+    }
+
+    private JToggleButton createToggleButton (int buttonNumber,
+                                              int lineNumber,
+                                              int instrument)
+    {
+        JToggleButton jb = new JToggleButton();
+        jb.setMnemonic(buttonNumber);
+        jb.setPreferredSize(new Dimension(20,20));
+        jb.addActionListener(e ->
+        {
+            long event_id = lineNumber*100+jb.getMnemonic()*2;
+            long event_id2 = event_id+1;
+            if (jb.isSelected())
+            {
+                try
+                {
+                    ShortMessage on = new ShortMessage(ShortMessage.NOTE_ON,
+                            9, instrument, 127);
+                    ShortMessage off = new ShortMessage(ShortMessage.NOTE_OFF,
+                            9, instrument, 0);
+                    putEvent (event_id, new MidiEvent(on, jb.getMnemonic()));
+                    putEvent (event_id2, new MidiEvent(off, jb.getMnemonic()));
+                }
+                catch (Exception e1)
+                {
+                    System.out.println(e1);
+                }
+            }
+            else
+            {
+                deleteEvent(event_id);
+                deleteEvent(event_id2);
+            }
+        });
+        jb.setBorder(BorderFactory.createLineBorder(Color.GREEN));
+        return jb;
     }
 
     /**
@@ -123,7 +189,7 @@ public class Drumbox extends JPanel
         panel.add(but);
         but.addActionListener(e ->
         {
-            for (int i=2; i<(STEPS+2); i++)
+            for (int i = 2; i<(drumSteps +2); i++)
             {
                 JToggleButton b1 = (JToggleButton)panel.getComponent(i);
                 if (b1.isSelected())
@@ -131,39 +197,9 @@ public class Drumbox extends JPanel
             }
         });
 
-        for (int s = 0; s < STEPS; s++)
+        for (int buttonNo = 0; buttonNo < drumSteps; buttonNo++)
         {
-            JToggleButton jb = new JToggleButton();
-            jb.setMnemonic(s);
-            jb.setPreferredSize(new Dimension(20,20));
-            jb.addActionListener(e ->
-            {
-                long event_id = lineNumber*100+jb.getMnemonic()*2;
-                long event_id2 = event_id+1;
-                if (jb.isSelected())
-                {
-                    try
-                    {
-                        ShortMessage on = new ShortMessage(ShortMessage.NOTE_ON,
-                                9, instrument.get(), 127);
-                        ShortMessage off = new ShortMessage(ShortMessage.NOTE_OFF,
-                                9, instrument.get(), 0);
-                        putEvent (event_id, new MidiEvent(on, jb.getMnemonic()));
-                        putEvent (event_id2, new MidiEvent(off, jb.getMnemonic()));
-                    }
-                    catch (Exception e1)
-                    {
-                        System.out.println(e1);
-                    }
-                }
-                else
-                {
-                    deleteEvent(event_id);
-                    deleteEvent(event_id2);
-                }
-            });
-            jb.setBorder(BorderFactory.createLineBorder(Color.GREEN));
-            panel.add(jb);
+            panel.add(createToggleButton (buttonNo, lineNumber, instrument.get()));
         }
         return panel;
     }
@@ -251,6 +287,35 @@ public class Drumbox extends JPanel
         panel.add (new JLabel("Loop:"));
         panel.add (loops);
 
+        JButton bplus = new JButton("+");
+        bplus.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed (ActionEvent e)
+            {
+                if (drumSteps < 32)
+                {
+                    hideShowButton(drumSteps, true);
+                    drumSteps++;
+                }
+            }
+        });
+        JButton bminus = new JButton("-");
+        bminus.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed (ActionEvent e)
+            {
+                if (drumSteps > 1)
+                {
+                    drumSteps--;
+                    hideShowButton(drumSteps, false);
+                }
+            }
+        });
+        panel.add (bminus);
+        panel.add (bplus);
+
         return panel;
     }
 
@@ -313,7 +378,7 @@ public class Drumbox extends JPanel
                 MidiEvent ev = e.getValue();
                 ShortMessage msg = (ShortMessage) ev.getMessage();
                 MidiEvent clone = new MidiEvent(msg, 0);
-                long tick = (ev.getTick() + s*STEPS) * slider.getValue();
+                long tick = (ev.getTick() + s* drumSteps) * slider.getValue();
                 if (msg.getCommand() == ShortMessage.NOTE_ON)
                 {
                     clone.setTick(tick);
