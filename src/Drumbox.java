@@ -15,11 +15,15 @@ public class Drumbox extends JPanel
     private static final ImageIcon iconStop = new ImageIcon(Helper.loadImageFromRessource("stop.png"));
     private final Sequencer sequencer;
     private final JInternalFrame mdiClient;
-
+    private final JSlider speedSlider = new JSlider();  // Speed for this pattern
+    private final JTextField loopCount = new JTextField();
     private int drumSteps = 32; // Number of drumSteps
     private static final int LINES = 10;
     private JPanel[] drumPanels = new JPanel[LINES];
     private static final int NOTELENGTH = 40;
+    static int instanceNumber = 0;
+    int thisInstNumber;
+    private final HashMap<Long,MidiEvent> noteMap = new HashMap<>();
     static private final String[] instrumentNames = new String[]
     {
             "27 High Q (GM2)",
@@ -84,8 +88,16 @@ public class Drumbox extends JPanel
             "86 Mute Surdo (GM2)",
             "87 Open Surdo (GM2)"
     };
-    static int instanceNumber = 0;
-    private final HashMap<Long,MidiEvent> noteMap = new HashMap<>();
+
+    public int getInstanceNumber ()
+    {
+        return thisInstNumber;
+    }
+    public int getSliderValue()
+    {
+        return speedSlider.getValue();
+    }
+
 
     /**
      * Constructor: Build complete frame and show it
@@ -103,10 +115,11 @@ public class Drumbox extends JPanel
         }
         add (makeControlPanel());
         setVisible(true);
+        thisInstNumber = instanceNumber;
         instanceNumber++;
     }
 
-    private void hideShowButton (int s, boolean show)
+    private void hideShowButtonRow (int s, boolean show)
     {
         for (JPanel p : drumPanels)
         {
@@ -213,24 +226,21 @@ public class Drumbox extends JPanel
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
 
-        JSlider slider;
-        slider = new JSlider();
-        slider.setMinimum(100);
-        slider.setMaximum(1000);
-        slider.setMinorTickSpacing(25);
-        slider.setMajorTickSpacing(100);
-        slider.setPaintTicks(true);
-        slider.setSnapToTicks(true);
+        speedSlider.setMinimum(100);
+        speedSlider.setMaximum(1000);
+        speedSlider.setMinorTickSpacing(25);
+        speedSlider.setMajorTickSpacing(100);
+        speedSlider.setPaintTicks(true);
+        speedSlider.setSnapToTicks(true);
 
-        JTextField loops = new JTextField();
-        loops.setPreferredSize(new Dimension(30,30));
-        loops.setText("1");
+        loopCount.setPreferredSize(new Dimension(30,30));
+        loopCount.setText("1");
 
         JButton b1 = new JButton("Midi");
         panel.add(b1);
         b1.addActionListener(e ->
         {
-            Sequence sq = createMIDI(slider, loops);
+            Sequence sq = createMIDI();
             File f = new File("c:\\midfile.mid");
             try
             {
@@ -256,7 +266,7 @@ public class Drumbox extends JPanel
             else
             {
                 b2.setIcon(iconStop);
-                Sequence sq = createMIDI(slider, loops);
+                Sequence sq = createMIDI();
                 try
                 {
                     sequencer.addMetaEventListener(new MetaEventListener()
@@ -282,10 +292,10 @@ public class Drumbox extends JPanel
             }
         });
 
-        panel.add(slider);
+        panel.add(speedSlider);
 
         panel.add (new JLabel("Loop:"));
-        panel.add (loops);
+        panel.add (loopCount);
 
         JButton bplus = new JButton("+");
         bplus.addActionListener(new ActionListener()
@@ -295,7 +305,7 @@ public class Drumbox extends JPanel
             {
                 if (drumSteps < 32)
                 {
-                    hideShowButton(drumSteps, true);
+                    hideShowButtonRow(drumSteps, true);
                     drumSteps++;
                 }
             }
@@ -309,7 +319,7 @@ public class Drumbox extends JPanel
                 if (drumSteps > 1)
                 {
                     drumSteps--;
-                    hideShowButton(drumSteps, false);
+                    hideShowButtonRow(drumSteps, false);
                 }
             }
         });
@@ -356,10 +366,9 @@ public class Drumbox extends JPanel
 
     /**
      * Create a new Sequence that can be played or saved
-     * @param slider Speed slider
      * @return The sequence
      */
-    private Sequence createMIDI (JSlider slider, JTextField loops)
+    public Sequence createMIDI()
     {
         Sequence seq = null;
         try
@@ -371,14 +380,14 @@ public class Drumbox extends JPanel
             return null;
         }
         Track tr = seq.createTrack();
-        for (int s=0; s<Integer.parseInt(loops.getText()); s++)
+        for (int s=0; s<Integer.parseInt(loopCount.getText()); s++)
         {
             for (Map.Entry<Long, MidiEvent> e : noteMap.entrySet())
             {
                 MidiEvent ev = e.getValue();
                 ShortMessage msg = (ShortMessage) ev.getMessage();
                 MidiEvent clone = new MidiEvent(msg, 0);
-                long tick = (ev.getTick() + s* drumSteps) * slider.getValue();
+                long tick = (ev.getTick() + s * drumSteps) * speedSlider.getValue();
                 if (msg.getCommand() == ShortMessage.NOTE_ON)
                 {
                     clone.setTick(tick);
