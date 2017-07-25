@@ -7,32 +7,27 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Drumbox extends JFrame
+public class Drumbox extends JPanel
 {
-    private final HashMap<Long,MidiEvent> hmap = new HashMap<>();
+    private final HashMap<Long,MidiEvent> noteMap = new HashMap<>();
+    private static final int STEPS = 32;
+    private static final int LINES = 10;
+    private static final int NOTELENGTH = 40;
+
+    static int instanceNumber = 0;
 
     /**
      * Constructor: Build complete frame and show it
      * @throws Exception If smth. gone wrong
      */
-    private Drumbox (String title) throws Exception
+    public Drumbox () throws Exception
     {
-        super(title);
         setLayout(new GridLayout(11,1));
-        for (int s=0; s<10; s++)
+        for (int s=0; s<LINES; s++)
             add(makeDrumLinePanel(s));
         add (makeControlPanel());
-        setDefaultCloseOperation (WindowConstants.EXIT_ON_CLOSE);
-        pack(); //setSize(650, 500);
-        setResizable(false);
         setVisible(true);
-        setLocationRelativeTo(null);
-    }
-
-    public static void main (String[] args) throws Exception
-    {
-        UIManager.put("ToggleButton.select", Color.RED);
-        new Drumbox("MIDI Drumbox");
+        instanceNumber++;
     }
 
     private final String[] instrumentNames = new String[]
@@ -112,7 +107,11 @@ public class Drumbox extends JFrame
         JSlider slider;
         slider = new JSlider();
         slider.setMinimum(100);
-        slider.setMaximum(2000);
+        slider.setMaximum(1000);
+        slider.setMinorTickSpacing(25);
+        slider.setMajorTickSpacing(100);
+        slider.setPaintTicks(true);
+        slider.setSnapToTicks(true);
 
         JTextField loops = new JTextField();
         loops.setPreferredSize(new Dimension(30,30));
@@ -169,7 +168,7 @@ public class Drumbox extends JFrame
     private void putEvent (long key, MidiEvent ev)
     {
         System.out.println("put: "+key);
-        hmap.put(key, ev);
+        noteMap.put(key, ev);
     }
 
     /**
@@ -178,7 +177,7 @@ public class Drumbox extends JFrame
      */
     private void deleteEvent (long key)
     {
-        MidiEvent e1 = hmap.remove(key);
+        MidiEvent e1 = noteMap.remove(key);
         if (e1 != null)
         {
             System.out.println("del: "+key);
@@ -215,19 +214,19 @@ public class Drumbox extends JFrame
         Track tr = seq.createTrack();
         for (int s=0; s<Integer.parseInt(loops.getText()); s++)
         {
-            for (Map.Entry<Long, MidiEvent> e : hmap.entrySet())
+            for (Map.Entry<Long, MidiEvent> e : noteMap.entrySet())
             {
                 MidiEvent ev = e.getValue();
                 ShortMessage msg = (ShortMessage) ev.getMessage();
                 MidiEvent clone = new MidiEvent(msg, 0);
-                long tick = (ev.getTick() + s*32) * slider.getValue();
+                long tick = (ev.getTick() + s*STEPS) * slider.getValue();
                 if (msg.getCommand() == ShortMessage.NOTE_ON)
                 {
                     clone.setTick(tick);
                 }
                 else
                 {
-                    clone.setTick(tick + 40);
+                    clone.setTick(tick + NOTELENGTH);
                 }
                 tr.add(clone);
             }
@@ -260,7 +259,7 @@ public class Drumbox extends JFrame
         panel.add(but);
         but.addActionListener(e ->
         {
-            for (int i=2; i<34; i++)
+            for (int i=2; i<(STEPS+2); i++)
             {
                 JToggleButton b1 = (JToggleButton)panel.getComponent(i);
                 if (b1.isSelected())
@@ -268,7 +267,7 @@ public class Drumbox extends JFrame
             }
         });
 
-        for (int s = 0; s < 32; s++)
+        for (int s = 0; s < STEPS; s++)
         {
             JToggleButton jb = new JToggleButton();
             jb.setMnemonic(s);
