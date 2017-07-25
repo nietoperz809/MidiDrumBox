@@ -4,11 +4,11 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Drumbox extends JFrame
 {
-    private final Track track = new Sequence(0.0f,0).createTrack(); //newSeq.createTrack();
     private final HashMap<Long,MidiEvent> hmap = new HashMap<>();
 
     /**
@@ -21,7 +21,7 @@ public class Drumbox extends JFrame
         setLayout(new GridLayout(11,1));
         for (int s=0; s<10; s++)
             add(makeDrumLinePanel(s));
-        add (makeControlP());
+        add (makeControlPanel());
         setDefaultCloseOperation (WindowConstants.EXIT_ON_CLOSE);
         pack(); //setSize(650, 500);
         setResizable(false);
@@ -104,7 +104,7 @@ public class Drumbox extends JFrame
      * Create control panel
      * @return The panel
      */
-    private JPanel makeControlP ()
+    private JPanel makeControlPanel ()
     {
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
@@ -114,11 +114,15 @@ public class Drumbox extends JFrame
         slider.setMinimum(100);
         slider.setMaximum(2000);
 
+        JTextField loops = new JTextField();
+        loops.setPreferredSize(new Dimension(30,30));
+        loops.setText("1");
+
         JButton b1 = new JButton("Save");
         panel.add(b1);
         b1.addActionListener(e ->
         {
-            Sequence sq = adjustTimings(slider);
+            Sequence sq = createMIDI(slider, loops);
             File f = new File("c:\\midfile.mid");
             try
             {
@@ -134,13 +138,13 @@ public class Drumbox extends JFrame
         panel.add(b2);
         b2.addActionListener(e ->
         {
-            Sequence sq = adjustTimings(slider);
+            Sequence sq = createMIDI(slider, loops);
             try
             {
                 Sequencer sequencer = MidiSystem.getSequencer();
                 sequencer.open();
                 sequencer.setSequence(sq);
-                Thread.sleep(500);
+                Thread.sleep(100);
                 sequencer.start();
             }
             catch (Exception ex)
@@ -150,6 +154,9 @@ public class Drumbox extends JFrame
         });
 
         panel.add(slider);
+
+        panel.add (new JLabel("Loop:"));
+        panel.add (loops);
 
         return panel;
     }
@@ -162,7 +169,6 @@ public class Drumbox extends JFrame
     private void putEvent (long key, MidiEvent ev)
     {
         System.out.println("put: "+key);
-        track.add(ev);
         hmap.put(key, ev);
     }
 
@@ -176,7 +182,6 @@ public class Drumbox extends JFrame
         if (e1 != null)
         {
             System.out.println("del: "+key);
-            track.remove(e1);
         }
     }
 
@@ -196,7 +201,7 @@ public class Drumbox extends JFrame
      * @param slider Speed slider
      * @return The sequence
      */
-    private Sequence adjustTimings (JSlider slider)
+    private Sequence createMIDI (JSlider slider, JTextField loops)
     {
         Sequence seq = null;
         try
@@ -208,24 +213,24 @@ public class Drumbox extends JFrame
             return null;
         }
         Track tr = seq.createTrack();
-        for (int s=0; s<track.size(); s++)
+        for (int s=0; s<Integer.parseInt(loops.getText()); s++)
         {
-            MidiEvent ev = track.get(s);
-            MidiEvent clone = new MidiEvent(ev.getMessage(),0);
-            long tick = ev.getTick()*slider.getValue();
-            MidiMessage mm = ev.getMessage();
-            if (!(mm instanceof ShortMessage))
-                continue;
-            ShortMessage msg = (ShortMessage)mm;
-            if (msg.getCommand() == ShortMessage.NOTE_ON)
+            for (Map.Entry<Long, MidiEvent> e : hmap.entrySet())
             {
-                clone.setTick(tick);
+                MidiEvent ev = e.getValue();
+                ShortMessage msg = (ShortMessage) ev.getMessage();
+                MidiEvent clone = new MidiEvent(msg, 0);
+                long tick = (ev.getTick() + s*32) * slider.getValue();
+                if (msg.getCommand() == ShortMessage.NOTE_ON)
+                {
+                    clone.setTick(tick);
+                }
+                else
+                {
+                    clone.setTick(tick + 40);
+                }
+                tr.add(clone);
             }
-            else
-            {
-                clone.setTick(tick+40);
-            }
-            tr.add(clone);
         }
         return seq;
     }
