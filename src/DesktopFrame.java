@@ -2,10 +2,12 @@
 // Demonstrating JDesktopPane.
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 
 public class DesktopFrame extends JFrame
 {
     private JDesktopPane theDesktop;
+    private ArrayList<Drumbox> allBoxes = new ArrayList<>();
 
     // set up GUI
     public DesktopFrame ()
@@ -33,8 +35,9 @@ public class DesktopFrame extends JFrame
                 "Pattern #" + Drumbox.instanceNumber, true, false, true, true);
         try
         {
-            Drumbox panel = new Drumbox();
-            frame.add(panel, BorderLayout.CENTER); // add panel
+            Drumbox drumbox = new Drumbox();
+            allBoxes.add(drumbox);
+            frame.add(drumbox, BorderLayout.CENTER); // add panel
             frame.pack(); // set internal frame to size of contents
             theDesktop.add(frame); // attach internal frame
             frame.setVisible(true); // show internal frame
