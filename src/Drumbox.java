@@ -6,34 +6,33 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Drumbox
+public class Drumbox extends JFrame
 {
-    private final Sequence newSeq = new Sequence(0.0f,960);
-    private final Track track = newSeq.createTrack();
+    private final Track track = new Sequence(0.0f,0).createTrack(); //newSeq.createTrack();
     private final HashMap<Long,MidiEvent> hmap = new HashMap<>();
+
     /**
      * Constructor: Build complete frame and show it
      * @throws Exception If smth. gone wrong
      */
-    private Drumbox () throws Exception
+    private Drumbox (String title) throws Exception
     {
-        JFrame frame = new JFrame("MIDI Drumbox");
-        frame.setLayout(new GridLayout(11,1));
+        super(title);
+        setLayout(new GridLayout(11,1));
         for (int s=0; s<10; s++)
-            frame.add(makeJP(s));
-        frame.add (makeControlP());
-        frame.setDefaultCloseOperation (WindowConstants.EXIT_ON_CLOSE);
-        frame.pack(); //setSize(650, 500);
-        frame.setResizable(false);
-        frame.setVisible(true);
-        frame.setLocationRelativeTo(null);
+            add(makeDrumLinePanel(s));
+        add (makeControlP());
+        setDefaultCloseOperation (WindowConstants.EXIT_ON_CLOSE);
+        pack(); //setSize(650, 500);
+        setResizable(false);
+        setVisible(true);
+        setLocationRelativeTo(null);
     }
-
 
     public static void main (String[] args) throws Exception
     {
         UIManager.put("ToggleButton.select", Color.RED);
-        new Drumbox();
+        new Drumbox("MIDI Drumbox");
     }
 
     private final String[] instrumentNames = new String[]
@@ -124,10 +123,11 @@ public class Drumbox
             try
             {
                 MidiSystem.write(sq, 1, f);
+                JOptionPane.showMessageDialog(this, "Saved to: "+f.getAbsolutePath(), "Drum Tool", JOptionPane.INFORMATION_MESSAGE);
             }
             catch (IOException e1)
             {
-                System.out.println(e1);
+                JOptionPane.showMessageDialog(this, "Saving fail: "+e1, "Drum Tool", JOptionPane.ERROR_MESSAGE);
             }
         });
         JButton b2 = new JButton("Play");
@@ -170,7 +170,7 @@ public class Drumbox
      * Delete Event from hashmap and track
      * @param key Event key
      */
-    private void delEvent (long key)
+    private void deleteEvent (long key)
     {
         MidiEvent e1 = hmap.remove(key);
         if (e1 != null)
@@ -192,7 +192,7 @@ public class Drumbox
     }
 
     /**
-     * Create a Sequence that can be played or saved
+     * Create a new Sequence that can be played or saved
      * @param slider Speed slider
      * @return The sequence
      */
@@ -201,7 +201,7 @@ public class Drumbox
         Sequence seq = null;
         try
         {
-            seq = new Sequence(newSeq.getDivisionType(), newSeq.getResolution());
+            seq = new Sequence(0.0f,960);
         }
         catch (InvalidMidiDataException e)
         {
@@ -235,7 +235,7 @@ public class Drumbox
      * @param lineNumber Y-coordinate of panel
      * @return The panel
      */
-    private JPanel makeJP (int lineNumber)
+    private JPanel makeDrumLinePanel (int lineNumber)
     {
         JPanel panel = new JPanel();
         panel.setBackground(Color.BLACK);
@@ -290,8 +290,8 @@ public class Drumbox
                 }
                 else
                 {
-                    delEvent(event_id);
-                    delEvent(event_id2);
+                    deleteEvent(event_id);
+                    deleteEvent(event_id2);
                 }
             });
             jb.setBorder(BorderFactory.createLineBorder(Color.GREEN));
