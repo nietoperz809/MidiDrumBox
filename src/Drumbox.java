@@ -140,6 +140,18 @@ public class Drumbox extends JPanel implements Serializable
     }
 
     /**
+     * Constructor that loads a pattern from disk
+     * @param frame Parent frame
+     * @param patternPath Path to patern file
+     * @throws Exception smth gone wrong
+     */
+    public Drumbox (JInternalFrame frame, String patternPath) throws Exception
+    {
+        this (frame);
+        loadPattern(patternPath);
+    }
+
+    /**
      * Create Panel for one Instrument
      *
      * @param lineNumber Y-coordinate of panel
@@ -205,19 +217,16 @@ public class Drumbox extends JPanel implements Serializable
         b1.addActionListener(e ->
         {
             final JFileChooser fc = new JFileChooser();
-            File f = new File("Drumpattern#"+
-                    instanceNumber+"-"+
-                    System.currentTimeMillis()+".drmp");
+            File f = new File("Drumpattern#" +
+                    instanceNumber + "-" +
+                    System.currentTimeMillis() + ".drmp");
             fc.setSelectedFile(f);
-            int returnVal = fc.showSaveDialog(this);
-            if (returnVal == JFileChooser.APPROVE_OPTION)
+            if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION)
             {
                 try
                 {
                     String name = fc.getSelectedFile().getCanonicalPath();
-                    Helper.serialize(name,
-                            noteMap, speedSlider.getValue(), loopCount.getText(),
-                            drumSteps);
+                    savePattern(name);
                 }
                 catch (Exception ex2)
                 {
@@ -238,60 +247,22 @@ public class Drumbox extends JPanel implements Serializable
             FileNameExtensionFilter filter = new FileNameExtensionFilter("Drum Pattern",
                     "drmp");
             fc.setFileFilter(filter);
-            int returnVal = fc.showOpenDialog(this);
-
-            if (returnVal == JFileChooser.APPROVE_OPTION)
+            if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
             {
                 try
                 {
-                    String name = fc.getSelectedFile().getCanonicalPath();
-                    Object[] objs = Helper.deSerialize(name);
-                    noteMap = (HashMap<Long, SerMidEvent>) objs[0];
-                    Integer speedval = (Integer) objs[1];
-                    String loops = (String) objs[2];
-                    drumSteps = (Integer) objs[3];
-                    hSMultiple(drumSteps);
-                    speedSlider.setValue(speedval);
-                    loopCount.setText(loops);
-                    // switch buttons on
-                    //long event_id = lineNumber * 100 + jb.getMnemonic() * 2; // key_on is even
-                    //long event_id2 = event_id + 1;  // key_off is odd
-                    for (DrumPanel p : drumPanels)
-                    {
-                        p.clearButton.doClick();
-                    }
-                    for (Long k : noteMap.keySet())
-                    {
-                        int linenum = (int) (k / 100);
-                        int keynum = (int) (k % 100);
-                        if (keynum % 2 == 0)
-                        {
-                            keynum = keynum / 2; // real keynum
-                            SerMidEvent ev = noteMap.get(k); // get the event
-                            int instrument = ((SerShortMessage) ev.getMessage()).getData1();
-                            DrumPanel p = drumPanels[linenum];
-                            setInstrument(p.combo, instrument);
-                            for (JToggleButton c : p.toggleButtons)
-                            {
-                                if (c.getMnemonic() == keynum)
-                                {
-                                    c.setSelected(true);
-                                    break;
-                                }
-                            }
-                        }
-                    }
+                    String filename = fc.getSelectedFile().getCanonicalPath();
+                    loadPattern(filename);
                 }
                 catch (Exception e1)
                 {
-                    System.out.println(e1);
+                    e1.printStackTrace();
                 }
             }
             else
             {
                 System.out.println("Open command cancelled by user.");
             }
-
         });
 
         JButton b2 = new JButton();
@@ -340,7 +311,7 @@ public class Drumbox extends JPanel implements Serializable
             if (drumSteps < 32)
             {
                 drumSteps++;
-                hSMultiple(drumSteps);
+                adjustDrumLineLength(drumSteps);
             }
         });
         panel.add(bplus);
@@ -351,7 +322,7 @@ public class Drumbox extends JPanel implements Serializable
             if (drumSteps > 1)
             {
                 drumSteps--;
-                hSMultiple(drumSteps);
+                adjustDrumLineLength(drumSteps);
             }
         });
         panel.add(bminus);
@@ -371,6 +342,13 @@ public class Drumbox extends JPanel implements Serializable
         instrument.set(i);
     }
 
+    /**
+     * Create a drum checkbox
+     * @param buttonNumber Number of button in line (ascending, begins at 0)
+     * @param lineNumber Number of butten line (also 0-based)
+     * @param instrument Instrument number used by this drum line
+     * @return
+     */
     private JToggleButton createToggleButton (int buttonNumber,
                                               int lineNumber,
                                               AtomicInteger instrument)
@@ -408,36 +386,66 @@ public class Drumbox extends JPanel implements Serializable
         return jb;
     }
 
-    private void hSMultiple (int val)
+    /**
+     * Saves one pattern to disk
+     * 1. the note map containing all events
+     * 2. speed value
+     * 3. Loop value
+     * 4. drum steps (size of line)
+     * @param filename path an full file name
+     * @throws Exception smth gone wrong
+     */
+    private void savePattern (String filename) throws Exception
     {
-        for (DrumPanel p : drumPanels)
-        {
-            for (int s = 0; s < 32; s++)
-            {
-                JToggleButton b = p.toggleButtons.get(s);
-                if (s < val)
-                {
-                    b.setVisible(true);
-                }
-                else
-                {
-                    b.setVisible(false);
-                }
-            }
-        }
-        mdiClient.pack();
+        Helper.serialize(filename,
+                noteMap, speedSlider.getValue(), loopCount.getText(),
+                drumSteps);
     }
 
-    private void setInstrument (JComboBox combo, int instrument)
+    /**
+     * Loads one pattern from disk and initializes the drumbox
+     * @param filename path to disk file
+     * @throws Exception if smth gone wrong
+     */
+    private void loadPattern (String filename) throws Exception
     {
-        for (int s = 0; s < instrumentNames.length; s++)
+        Object[] objs = Helper.deSerialize(filename);
+        noteMap = (HashMap<Long, SerMidEvent>) objs[0];
+        Integer speedval = (Integer) objs[1];
+        String loops = (String) objs[2];
+        drumSteps = (Integer) objs[3];
+        adjustDrumLineLength(drumSteps);
+        speedSlider.setValue(speedval);
+        loopCount.setText(loops);
+        // switch buttons on
+        //long event_id = lineNumber * 100 + jb.getMnemonic() * 2; // key_on is even
+        //long event_id2 = event_id + 1;  // key_off is odd
+        for (DrumPanel p : drumPanels)
         {
-            if (readFirstTwo(instrumentNames[s]) == instrument)
+            p.clearButton.doClick();
+        }
+        for (Long k : noteMap.keySet())
+        {
+            int linenum = (int) (k / 100);
+            int keynum = (int) (k % 100);
+            if (keynum % 2 == 0)
             {
-                combo.setSelectedIndex(s);
-                break;
+                keynum = keynum / 2; // real keynum
+                SerMidEvent ev = noteMap.get(k); // get the event
+                int instrument = ((SerShortMessage) ev.getMessage()).getData1();
+                DrumPanel p = drumPanels[linenum];
+                setInstrument(p.combo, instrument);
+                for (JToggleButton c : p.toggleButtons)
+                {
+                    if (c.getMnemonic() == keynum)
+                    {
+                        c.setSelected(true);
+                        break;
+                    }
+                }
             }
         }
+
     }
 
     /**
@@ -479,6 +487,35 @@ public class Drumbox extends JPanel implements Serializable
         return seq;
     }
 
+    /**
+     * Disables buttons after val and enables all before val
+     * @param val last button which is enabled
+     */
+    private void adjustDrumLineLength (int val)
+    {
+        for (DrumPanel p : drumPanels)
+        {
+            for (int s = 0; s < 32; s++)
+            {
+                JToggleButton b = p.toggleButtons.get(s);
+                if (s < val)
+                {
+                    b.setVisible(true);
+                }
+                else
+                {
+                    b.setVisible(false);
+                }
+            }
+        }
+        mdiClient.pack();
+    }
+
+    /**
+     * Read a number from beginning of string
+     * @param in String beginning with number
+     * @return The number
+     */
     private int readFirstTwo (String in)
     {
         String s = in.substring(0, 2);
@@ -511,11 +548,36 @@ public class Drumbox extends JPanel implements Serializable
         }
     }
 
+    /**
+     * Set combobox of drum line to a specific instrument
+     * @param combo The combobox
+     * @param instrument MIDI instrument nmber
+     */
+    private void setInstrument (JComboBox combo, int instrument)
+    {
+        for (int s = 0; s < instrumentNames.length; s++)
+        {
+            if (readFirstTwo(instrumentNames[s]) == instrument)
+            {
+                combo.setSelectedIndex(s);
+                break;
+            }
+        }
+    }
+
+    /**
+     * Return instance number of this Drumbox
+     * @return ints num
+     */
     public int getInstanceNumber ()
     {
         return thisInstNumber;
     }
 
+    /**
+     * Return speed base of this Drumbox
+     * @return The speed value
+     */
     public int getSliderValue ()
     {
         return speedSlider.getValue();
