@@ -27,10 +27,9 @@ public class Helper
      * @param o
      * @throws Exception
      */
-    public static void serialize (String path, String filename, Object... o) throws Exception
+    public static void serialize (String filename, Object... o) throws Exception
     {
-        new File(path).mkdirs();
-        FileOutputStream f_out = new FileOutputStream(path + filename);
+        FileOutputStream f_out = new FileOutputStream(filename);
         ObjectOutputStream obj_out = new ObjectOutputStream(f_out);
         for (int s=0; s<o.length; s++)
             obj_out.writeObject(o[s]);
@@ -45,10 +44,10 @@ public class Helper
      * @return
      * @throws Exception
      */
-    public static Object[] deSerialize (String path, String filename) throws Exception
+    public static Object[] deSerialize (String filename) throws Exception
     {
         ArrayList<Object> list = new ArrayList<>();
-        FileInputStream f_in = new FileInputStream(path + filename);
+        FileInputStream f_in = new FileInputStream (filename);
         ObjectInputStream obj_in = new ObjectInputStream(f_in);
         try
         {

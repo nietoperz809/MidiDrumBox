@@ -3,9 +3,9 @@ import sermidi.SerShortMessage;
 
 import javax.sound.midi.*;
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -204,15 +204,29 @@ public class Drumbox extends JPanel implements Serializable
         panel.add(b1);
         b1.addActionListener(e ->
         {
-            try
+            final JFileChooser fc = new JFileChooser();
+            File f = new File("Drumpattern#"+
+                    instanceNumber+"-"+
+                    System.currentTimeMillis()+".drmp");
+            fc.setSelectedFile(f);
+            int returnVal = fc.showSaveDialog(this);
+            if (returnVal == JFileChooser.APPROVE_OPTION)
             {
-                Helper.serialize("c:\\sertest\\", "test.ser",
-                        noteMap, speedSlider.getValue(), loopCount.getText(),
-                        drumSteps);
+                try
+                {
+                    String name = fc.getSelectedFile().getCanonicalPath();
+                    Helper.serialize(name,
+                            noteMap, speedSlider.getValue(), loopCount.getText(),
+                            drumSteps);
+                }
+                catch (Exception ex2)
+                {
+                    System.out.println(ex2);
+                }
             }
-            catch (Exception ex2)
+            else
             {
-                System.out.println(ex2);
+                System.out.println("Open command cancelled by user.");
             }
         });
 
@@ -220,49 +234,64 @@ public class Drumbox extends JPanel implements Serializable
         panel.add(bload);
         bload.addActionListener(e ->
         {
-            try
+            final JFileChooser fc = new JFileChooser();
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Drum Pattern",
+                    "drmp");
+            fc.setFileFilter(filter);
+            int returnVal = fc.showOpenDialog(this);
+
+            if (returnVal == JFileChooser.APPROVE_OPTION)
             {
-                Object[] objs = Helper.deSerialize("c:\\sertest\\", "test.ser");
-                noteMap = (HashMap<Long, SerMidEvent>) objs[0];
-                Integer speedval = (Integer)objs[1];
-                String loops = (String)objs[2];
-                drumSteps = (Integer)objs[3];
-                hSMultiple(drumSteps);
-                speedSlider.setValue(speedval);
-                loopCount.setText(loops);
-                // switch buttons on
-                //long event_id = lineNumber * 100 + jb.getMnemonic() * 2; // key_on is even
-                //long event_id2 = event_id + 1;  // key_off is odd
-                for (DrumPanel p : drumPanels)
+                try
                 {
-                    p.clearButton.doClick();
-                }
-                for (Long k : noteMap.keySet())
-                {
-                    int linenum = (int) (k / 100);
-                    int keynum = (int) (k % 100);
-                    if (keynum % 2 == 0)
+                    String name = fc.getSelectedFile().getCanonicalPath();
+                    Object[] objs = Helper.deSerialize(name);
+                    noteMap = (HashMap<Long, SerMidEvent>) objs[0];
+                    Integer speedval = (Integer) objs[1];
+                    String loops = (String) objs[2];
+                    drumSteps = (Integer) objs[3];
+                    hSMultiple(drumSteps);
+                    speedSlider.setValue(speedval);
+                    loopCount.setText(loops);
+                    // switch buttons on
+                    //long event_id = lineNumber * 100 + jb.getMnemonic() * 2; // key_on is even
+                    //long event_id2 = event_id + 1;  // key_off is odd
+                    for (DrumPanel p : drumPanels)
                     {
-                        keynum = keynum / 2; // real keynum
-                        SerMidEvent ev = noteMap.get(k); // get the event
-                        int instrument = ((SerShortMessage) ev.getMessage()).getData1();
-                        DrumPanel p = drumPanels[linenum];
-                        setInstrument(p.combo, instrument);
-                        for (JToggleButton c : p.toggleButtons)
+                        p.clearButton.doClick();
+                    }
+                    for (Long k : noteMap.keySet())
+                    {
+                        int linenum = (int) (k / 100);
+                        int keynum = (int) (k % 100);
+                        if (keynum % 2 == 0)
                         {
-                            if (c.getMnemonic() == keynum)
+                            keynum = keynum / 2; // real keynum
+                            SerMidEvent ev = noteMap.get(k); // get the event
+                            int instrument = ((SerShortMessage) ev.getMessage()).getData1();
+                            DrumPanel p = drumPanels[linenum];
+                            setInstrument(p.combo, instrument);
+                            for (JToggleButton c : p.toggleButtons)
                             {
-                                c.setSelected(true);
-                                break;
+                                if (c.getMnemonic() == keynum)
+                                {
+                                    c.setSelected(true);
+                                    break;
+                                }
                             }
                         }
                     }
                 }
+                catch (Exception e1)
+                {
+                    System.out.println(e1);
+                }
             }
-            catch (Exception e1)
+            else
             {
-                System.out.println(e1);
+                System.out.println("Open command cancelled by user.");
             }
+
         });
 
         JButton b2 = new JButton();
@@ -306,33 +335,26 @@ public class Drumbox extends JPanel implements Serializable
         panel.add(loopCount);
 
         JButton bplus = new JButton("+");
-        bplus.addActionListener(new ActionListener()
+        bplus.addActionListener(e ->
         {
-            @Override
-            public void actionPerformed (ActionEvent e)
+            if (drumSteps < 32)
             {
-                if (drumSteps < 32)
-                {
-                    hideShowButtonRow(drumSteps, true);
-                    drumSteps++;
-                }
+                drumSteps++;
+                hSMultiple(drumSteps);
             }
         });
+        panel.add(bplus);
+
         JButton bminus = new JButton("-");
-        bminus.addActionListener(new ActionListener()
+        bminus.addActionListener(e ->
         {
-            @Override
-            public void actionPerformed (ActionEvent e)
+            if (drumSteps > 1)
             {
-                if (drumSteps > 1)
-                {
-                    drumSteps--;
-                    hideShowButtonRow(drumSteps, false);
-                }
+                drumSteps--;
+                hSMultiple(drumSteps);
             }
         });
         panel.add(bminus);
-        panel.add(bplus);
 
         return panel;
     }
@@ -386,6 +408,26 @@ public class Drumbox extends JPanel implements Serializable
         return jb;
     }
 
+    private void hSMultiple (int val)
+    {
+        for (DrumPanel p : drumPanels)
+        {
+            for (int s = 0; s < 32; s++)
+            {
+                JToggleButton b = p.toggleButtons.get(s);
+                if (s < val)
+                {
+                    b.setVisible(true);
+                }
+                else
+                {
+                    b.setVisible(false);
+                }
+            }
+        }
+        mdiClient.pack();
+    }
+
     private void setInstrument (JComboBox combo, int instrument)
     {
         for (int s = 0; s < instrumentNames.length; s++)
@@ -435,38 +477,6 @@ public class Drumbox extends JPanel implements Serializable
             }
         }
         return seq;
-    }
-
-   private void hSMultiple (int val)
-   {
-       for (DrumPanel p : drumPanels)
-       {
-           for (int s=0; s<32; s++)
-           {
-               JToggleButton b = p.toggleButtons.get(s);
-               if (s < val)
-                   b.setVisible(true);
-               else
-                   b.setVisible(false);
-           }
-       }
-       mdiClient.pack();
-   }
-
-    private void hideShowButtonRow (int s, boolean show)
-    {
-        for (DrumPanel p : drumPanels)
-        {
-            for (JToggleButton c : p.toggleButtons)
-            {
-                if (c.getMnemonic() == s)
-                {
-                    c.setVisible(show);
-                    break;
-                }
-            }
-        }
-        mdiClient.pack();
     }
 
     private int readFirstTwo (String in)
