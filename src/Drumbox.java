@@ -119,7 +119,6 @@ public class Drumbox extends JPanel implements Serializable
     private final JInternalFrame mdiClient;
     private final JSlider speedSlider = new JSlider();  // Speed for this pattern
     private final JTextField loopCount = new JTextField();
-    private int thisInstNumber;
     private HashMap<Long, SerMidEvent> noteMap = new HashMap<>();   // The event list
     private int drumSteps = 32; // Number of drumSteps
     private final DrumPanel[] drumPanels = new DrumPanel[LINES];
@@ -141,7 +140,6 @@ public class Drumbox extends JPanel implements Serializable
         }
         add(makeControlPanel());
         setVisible(true);
-        thisInstNumber = instanceNumber;
         instanceNumber++;
     }
 
@@ -601,15 +599,6 @@ public class Drumbox extends JPanel implements Serializable
                 break;
             }
         }
-    }
-
-    /**
-     * Return instance number of this Drumbox
-     * @return ints num
-     */
-    public int getInstanceNumber ()
-    {
-        return thisInstNumber;
     }
 
     /**
