@@ -1,6 +1,7 @@
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.io.*;
+import java.util.ArrayList;
 
 public class Helper
 {
@@ -26,12 +27,13 @@ public class Helper
      * @param o
      * @throws Exception
      */
-    public static void serialize (String path, String filename, Object o) throws Exception
+    public static void serialize (String path, String filename, Object... o) throws Exception
     {
         new File(path).mkdirs();
         FileOutputStream f_out = new FileOutputStream(path + filename);
         ObjectOutputStream obj_out = new ObjectOutputStream(f_out);
-        obj_out.writeObject(o);
+        for (int s=0; s<o.length; s++)
+            obj_out.writeObject(o[s]);
         obj_out.close();
         f_out.close();
     }
@@ -43,20 +45,28 @@ public class Helper
      * @return
      * @throws Exception
      */
-    public static Object deSerialize (String path, String filename) throws Exception
+    public static Object[] deSerialize (String path, String filename) throws Exception
     {
-        Object ret = null;
+        ArrayList<Object> list = new ArrayList<>();
         FileInputStream f_in = new FileInputStream(path + filename);
         ObjectInputStream obj_in = new ObjectInputStream(f_in);
         try
         {
-            ret = obj_in.readObject();
+            while (true)
+            {
+                Object ox = obj_in.readObject();
+                list.add(ox);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.out.println("No more objects");
         }
         finally
         {
             obj_in.close();
             f_in.close();
         }
-        return ret;
+        return list.toArray();
     }
 }

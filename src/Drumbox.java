@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,17 +16,25 @@ class DrumPanel extends JPanel
 {
     JButton clearButton;
     JComboBox combo;
+    ArrayList<JToggleButton> toggleButtons = new ArrayList<>();
 
-    Component addComboBox(JComboBox j)
+    Component addToggleButton (JToggleButton j)
     {
-        combo = j;
-        return add (j);
+        toggleButtons.add(j);
+        return add(j);
     }
 
-    Component addClearButton(JButton j)
+
+    Component addComboBox (JComboBox j)
+    {
+        combo = j;
+        return add(j);
+    }
+
+    Component addClearButton (JButton j)
     {
         clearButton = j;
-        return add (j);
+        return add(j);
     }
 }
 
@@ -104,8 +113,8 @@ public class Drumbox extends JPanel implements Serializable
     private final JInternalFrame mdiClient;
     private final JSlider speedSlider = new JSlider();  // Speed for this pattern
     private final JTextField loopCount = new JTextField();
-    private  HashMap<Long, SerMidEvent> noteMap = new HashMap<>();   // The event list
     int thisInstNumber;
+    private HashMap<Long, SerMidEvent> noteMap = new HashMap<>();   // The event list
     private int drumSteps = 32; // Number of drumSteps
     private DrumPanel[] drumPanels = new DrumPanel[LINES];
 
@@ -150,16 +159,15 @@ public class Drumbox extends JPanel implements Serializable
         combo.addActionListener(e ->
         {
             getInstrument(combo, instrument);
-            System.out.println("Instrument: "+instrument.get());
+            System.out.println("Instrument: " + instrument.get());
         });
         panel.addComboBox(combo);
 
         JButton but = new JButton("Clear");
         but.addActionListener(e ->
         {
-            for (int i = 2; i < (drumSteps + 2); i++)
+            for (JToggleButton b1 : panel.toggleButtons)
             {
-                JToggleButton b1 = (JToggleButton) panel.getComponent(i);
                 b1.setSelected(false);
             }
         });
@@ -167,7 +175,7 @@ public class Drumbox extends JPanel implements Serializable
 
         for (int buttonNo = 0; buttonNo < drumSteps; buttonNo++)
         {
-            panel.add(createToggleButton(buttonNo, lineNumber, instrument));
+            panel.addToggleButton(createToggleButton(buttonNo, lineNumber, instrument));
         }
         return panel;
     }
@@ -198,7 +206,9 @@ public class Drumbox extends JPanel implements Serializable
         {
             try
             {
-                Helper.serialize("c:\\sertest\\", "test.ser", noteMap);
+                Helper.serialize("c:\\sertest\\", "test.ser",
+                        noteMap, speedSlider.getValue(), loopCount.getText(),
+                        drumSteps);
             }
             catch (Exception ex2)
             {
@@ -212,35 +222,38 @@ public class Drumbox extends JPanel implements Serializable
         {
             try
             {
-                Object o = Helper.deSerialize("c:\\sertest\\", "test.ser");
-                noteMap = (HashMap<Long, SerMidEvent>) o;
+                Object[] objs = Helper.deSerialize("c:\\sertest\\", "test.ser");
+                noteMap = (HashMap<Long, SerMidEvent>) objs[0];
+                Integer speedval = (Integer)objs[1];
+                String loops = (String)objs[2];
+                drumSteps = (Integer)objs[3];
+                hSMultiple(drumSteps);
+                speedSlider.setValue(speedval);
+                loopCount.setText(loops);
                 // switch buttons on
                 //long event_id = lineNumber * 100 + jb.getMnemonic() * 2; // key_on is even
                 //long event_id2 = event_id + 1;  // key_off is odd
                 for (DrumPanel p : drumPanels)
+                {
                     p.clearButton.doClick();
+                }
                 for (Long k : noteMap.keySet())
                 {
-                    int linenum = (int) (k/100);
-                    int keynum = (int) (k%100);
-                    if (keynum%2 == 0)
+                    int linenum = (int) (k / 100);
+                    int keynum = (int) (k % 100);
+                    if (keynum % 2 == 0)
                     {
-                        keynum = keynum/2; // real keynum
+                        keynum = keynum / 2; // real keynum
                         SerMidEvent ev = noteMap.get(k); // get the event
-                        int instrument = ((SerShortMessage)ev.getMessage()).getData1();
+                        int instrument = ((SerShortMessage) ev.getMessage()).getData1();
                         DrumPanel p = drumPanels[linenum];
-                        Component[] comps = p.getComponents();
                         setInstrument(p.combo, instrument);
-                        for (Component c : comps)
+                        for (JToggleButton c : p.toggleButtons)
                         {
-                            if (c instanceof JToggleButton)
+                            if (c.getMnemonic() == keynum)
                             {
-                                JToggleButton tb = (JToggleButton) c;
-                                if (tb.getMnemonic() == keynum)
-                                {
-                                    tb.setSelected(true);
-                                    break;
-                                }
+                                c.setSelected(true);
+                                break;
                             }
                         }
                     }
@@ -268,15 +281,11 @@ public class Drumbox extends JPanel implements Serializable
                 Sequence sq = createMIDI();
                 try
                 {
-                    sequencer.addMetaEventListener(new MetaEventListener()
+                    sequencer.addMetaEventListener(meta ->
                     {
-                        @Override
-                        public void meta (MetaMessage meta)
+                        if (meta.getType() == 47) // All played
                         {
-                            if (meta.getType() == 47)
-                            {
-                                b2.setIcon(iconPlay);
-                            }
+                            b2.setIcon(iconPlay);
                         }
                     });
                     sequencer.open();
@@ -340,24 +349,6 @@ public class Drumbox extends JPanel implements Serializable
         instrument.set(i);
     }
 
-    private void setInstrument (JComboBox combo, int instrument)
-    {
-        for (int s=0; s<instrumentNames.length; s++)
-        {
-            if (readFirstTwo(instrumentNames[s]) == instrument)
-            {
-                combo.setSelectedIndex(s);
-                break;
-            }
-        }
-    }
-
-    private int readFirstTwo (String in)
-    {
-        String s = in.substring(0, 2);
-        return Integer.parseInt(s);
-    }
-
     private JToggleButton createToggleButton (int buttonNumber,
                                               int lineNumber,
                                               AtomicInteger instrument)
@@ -393,6 +384,18 @@ public class Drumbox extends JPanel implements Serializable
         });
         jb.setBorder(BorderFactory.createLineBorder(Color.GREEN));
         return jb;
+    }
+
+    private void setInstrument (JComboBox combo, int instrument)
+    {
+        for (int s = 0; s < instrumentNames.length; s++)
+        {
+            if (readFirstTwo(instrumentNames[s]) == instrument)
+            {
+                combo.setSelectedIndex(s);
+                break;
+            }
+        }
     }
 
     /**
@@ -434,25 +437,42 @@ public class Drumbox extends JPanel implements Serializable
         return seq;
     }
 
+   private void hSMultiple (int val)
+   {
+       for (DrumPanel p : drumPanels)
+       {
+           for (int s=0; s<32; s++)
+           {
+               JToggleButton b = p.toggleButtons.get(s);
+               if (s < val)
+                   b.setVisible(true);
+               else
+                   b.setVisible(false);
+           }
+       }
+       mdiClient.pack();
+   }
+
     private void hideShowButtonRow (int s, boolean show)
     {
         for (DrumPanel p : drumPanels)
         {
-            Component[] comps = p.getComponents();
-            for (Component c : comps)
+            for (JToggleButton c : p.toggleButtons)
             {
-                if (c instanceof JToggleButton)
+                if (c.getMnemonic() == s)
                 {
-                    JToggleButton tb = (JToggleButton) c;
-                    if (tb.getMnemonic() == s)
-                    {
-                        tb.setVisible(show);
-                        break;
-                    }
+                    c.setVisible(show);
+                    break;
                 }
             }
         }
         mdiClient.pack();
+    }
+
+    private int readFirstTwo (String in)
+    {
+        String s = in.substring(0, 2);
+        return Integer.parseInt(s);
     }
 
     /**
