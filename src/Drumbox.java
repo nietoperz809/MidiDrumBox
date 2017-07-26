@@ -43,7 +43,7 @@ public class Drumbox extends JPanel implements Serializable
     private static final ImageIcon iconPlay = new ImageIcon(Helper.loadImageFromRessource("play.png"));
     private static final ImageIcon iconStop = new ImageIcon(Helper.loadImageFromRessource("stop.png"));
     private static final int LINES = 10;
-    private static final int NOTELENGTH = 40;
+    private final JSlider noteLength = new JSlider();
     private static final String[] instrumentNames = new String[]
             {
                     "27 High Q (GM2)",
@@ -219,6 +219,14 @@ public class Drumbox extends JPanel implements Serializable
         speedSlider.setPaintTicks(true);
         speedSlider.setSnapToTicks(true);
 
+        noteLength.setMinimum(50);
+        noteLength.setMaximum(1000);
+        noteLength.setMinorTickSpacing(25);
+        noteLength.setMajorTickSpacing(100);
+        noteLength.setPaintTicks(true);
+        noteLength.setSnapToTicks(true);
+
+
         loopCount.setPreferredSize(new Dimension(30, 30));
         loopCount.setText("1");
 
@@ -290,6 +298,7 @@ public class Drumbox extends JPanel implements Serializable
         });
 
         panel.add(speedSlider);
+        panel.add(noteLength);
 
         panel.add(new JLabel("Loop:"));
         panel.add(loopCount);
@@ -388,6 +397,7 @@ public class Drumbox extends JPanel implements Serializable
      * 2. speed value
      * 3. Loop value
      * 4. drum steps (size of line)
+     * 5. note Length
      * @throws Exception smth gone wrong
      */
     public void savePattern (ObjectWriter w)
@@ -396,6 +406,7 @@ public class Drumbox extends JPanel implements Serializable
         w.putObject(speedSlider.getValue());
         w.putObject(loopCount.getText());
         w.putObject(drumSteps);
+        w.putObject(noteLength.getValue());
     }
 
     public boolean loadFromStream (ObjectReader r)
@@ -453,6 +464,7 @@ public class Drumbox extends JPanel implements Serializable
         speedSlider.setValue((Integer)r.getObject());
         loopCount.setText((String)r.getObject());
         drumSteps = (Integer)r.getObject();
+        noteLength.setValue((Integer)r.getObject());
         adjustDrumLineLength(drumSteps);
         // switch buttons on
         //long event_id = lineNumber * 100 + jb.getMnemonic() * 2; // key_on is even
@@ -515,7 +527,7 @@ public class Drumbox extends JPanel implements Serializable
                 }
                 else
                 {
-                    clone.setTick(tick + NOTELENGTH);
+                    clone.setTick(tick + noteLength.getValue());
                 }
                 tr.add(clone);
             }

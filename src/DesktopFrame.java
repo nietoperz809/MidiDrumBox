@@ -10,14 +10,17 @@ import java.util.ArrayList;
 
 public class DesktopFrame extends JFrame
 {
-    private JDesktopPane theDesktop;
-    private ArrayList<Drumbox> allBoxes = new ArrayList<>();
-    private JMenu docMenu;
+    private final JDesktopPane theDesktop;
+    private final ArrayList<Drumbox> allBoxes = new ArrayList<>();
+    private final JMenu docMenu;
+    private JTextField patternList;
 
     // set up GUI
-    public DesktopFrame ()
+    private DesktopFrame ()
     {
         super("MIDI Drumbox");
+
+        setLayout(new BorderLayout());
 
         JMenuBar bar = new JMenuBar(); // create menu bar
         JMenu addMenu = new JMenu("Open"); // create Add menu
@@ -45,17 +48,20 @@ public class DesktopFrame extends JFrame
         setJMenuBar(bar); // set menu bar for this application
 
         theDesktop = new JDesktopPane(); // create desktop pane
-        add(theDesktop); // add desktop pane to frame
+        add(theDesktop, BorderLayout.CENTER); // add desktop pane to frame
+
+        add(createControlPanel(), BorderLayout.SOUTH);
 
         newFrame.addActionListener(event -> newDrumbox());
         combine.addActionListener(event -> combineAll());
         load.addActionListener(event -> loadDrumbox());
     }
 
-    private void loadProject()
+    private void loadProject ()
     {
         ObjectReader r = new ObjectReader("c:\\testproject");
-        for(;;)
+        patternList.setText((String)r.getObject());
+        for (; ; )
         {
             Drumbox box = newDrumbox();
             if (box == null)
@@ -68,15 +74,17 @@ public class DesktopFrame extends JFrame
                 JInternalFrame ji = box.getMdiClient();
                 ji.dispose();
                 allBoxes.remove(box);
+                docMenu.remove(docMenu.getItemCount() - 1);
                 break;
             }
         }
         r.close();
     }
 
-    private void saveProject()
+    private void saveProject ()
     {
         ObjectWriter w = new ObjectWriter("c:\\testproject");
+        w.putObject(patternList.getText());
         for (Drumbox d : allBoxes)
         {
             d.savePattern(w);
@@ -84,38 +92,72 @@ public class DesktopFrame extends JFrame
         w.close();
     }
 
-    private void combineAll()
+    private JPanel createControlPanel ()
+    {
+        JPanel p = new JPanel();
+        p.setLayout(new FlowLayout(FlowLayout.LEFT));
+
+        patternList = new JTextField();
+        patternList.setBackground(Color.white);
+        patternList.setPreferredSize(new Dimension(600, 20));
+        p.add(patternList);
+
+        JButton butt = new JButton("Create MIDI");
+        p.add(butt);
+        butt.addActionListener(e ->
+        {
+            String str = patternList.getText().replaceAll("\\s+", "");
+            String[] nums = str.split(",");
+            ArrayList<Integer> ar = new ArrayList<>();
+            for (String s : nums)
+            {
+                try
+                {
+                    ar.add (Integer.parseInt(s));
+                }
+                catch (Exception unused)
+                {
+
+                }
+            }
+            createMidi(ar);
+        });
+        return p;
+    }
+
+    private void createMidi(ArrayList<Integer> ar)
     {
         try
         {
-            Sequence s_out = new Sequence(0.0f,960);
+            Sequence s_out = new Sequence(0.0f, 960);
             Track t_out = s_out.createTrack();
             long offset = 0;
-            for (Drumbox box : allBoxes)
+            for (Integer i : ar)
             {
+                Drumbox box = allBoxes.get(i);
                 Sequence seq = box.createMIDI();
                 Track tr = seq.getTracks()[0];
-                for (int s=0; s<tr.size(); s++)
+                for (int s = 0; s < tr.size(); s++)
                 {
                     MidiEvent ev = tr.get(s);
                     if (ev.getMessage().getStatus() == 255) // end of track
                     {
                         continue;
                     }
-                    ev.setTick(ev.getTick()+offset);
+                    ev.setTick(ev.getTick() + offset);
                     t_out.add(ev);
                 }
-                offset += (tr.ticks()+box.getSliderValue());
+                offset += (tr.ticks() + box.getSliderValue());
             }
             File f = new File("c:\\midfile.mid");
             try
             {
                 MidiSystem.write(s_out, 1, f);
-                JOptionPane.showMessageDialog(this, "Saved to: "+f.getAbsolutePath(), "Drum Tool", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Saved to: " + f.getAbsolutePath(), "Drum Tool", JOptionPane.INFORMATION_MESSAGE);
             }
             catch (IOException e1)
             {
-                JOptionPane.showMessageDialog(this, "Saving fail: "+e1, "Drum Tool", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Saving fail: " + e1, "Drum Tool", JOptionPane.ERROR_MESSAGE);
             }
 
         }
@@ -125,18 +167,7 @@ public class DesktopFrame extends JFrame
         }
     }
 
-    private void loadDrumbox()
-    {
-        Drumbox box = newDrumbox();
-        if (box == null)
-        {
-            System.out.println("Drumbox creation fail");
-            return;
-        }
-        box.loadWithDialog();
-    }
-
-    private Drumbox newDrumbox()
+    private Drumbox newDrumbox ()
     {
         // create internal   frame
         JInternalFrame frame = new JInternalFrame(
@@ -144,19 +175,6 @@ public class DesktopFrame extends JFrame
         try
         {
             Drumbox drumbox = new Drumbox(frame);
-            return newDrumbox(drumbox, frame);
-        }
-        catch (Exception e)
-        {
-            System.out.println(e);
-        }
-        return null;
-    }
-
-    private Drumbox newDrumbox(Drumbox drumbox, JInternalFrame frame)
-    {
-        try
-        {
             JMenuItem item = new JMenuItem(frame.getTitle());
             item.addActionListener(e ->
             {
@@ -185,12 +203,28 @@ public class DesktopFrame extends JFrame
         return null;
     }
 
-    public static void main (String args[])
+    private void combineAll ()
     {
+    }
+
+    private void loadDrumbox ()
+    {
+        Drumbox box = newDrumbox();
+        if (box == null)
+        {
+            System.out.println("Drumbox creation fail");
+            return;
+        }
+        box.loadWithDialog();
+    }
+
+    public static void main (String args[]) throws Exception
+    {
+        UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
         UIManager.put("ToggleButton.select", Color.RED);
         DesktopFrame desktopFrame = new DesktopFrame();
         desktopFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        desktopFrame.setSize(600, 480); // set frame size
+        desktopFrame.setSize(800, 600); // set frame size
         desktopFrame.setVisible(true); // display frame
     } // end main
 } // end class DesktopFrame
