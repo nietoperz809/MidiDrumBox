@@ -11,6 +11,24 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+class DrumPanel extends JPanel
+{
+    JButton clearButton;
+    JComboBox combo;
+
+    Component addComboBox(JComboBox j)
+    {
+        combo = j;
+        return add (j);
+    }
+
+    Component addClearButton(JButton j)
+    {
+        clearButton = j;
+        return add (j);
+    }
+}
+
 public class Drumbox extends JPanel implements Serializable
 {
     private static final ImageIcon iconPlay = new ImageIcon(Helper.loadImageFromRessource("play.png"));
@@ -89,7 +107,7 @@ public class Drumbox extends JPanel implements Serializable
     private  HashMap<Long, SerMidEvent> noteMap = new HashMap<>();   // The event list
     int thisInstNumber;
     private int drumSteps = 32; // Number of drumSteps
-    private JPanel[] drumPanels = new JPanel[LINES];
+    private DrumPanel[] drumPanels = new DrumPanel[LINES];
 
     /**
      * Constructor: Build complete frame and show it
@@ -118,36 +136,34 @@ public class Drumbox extends JPanel implements Serializable
      * @param lineNumber Y-coordinate of panel
      * @return The panel
      */
-    private JPanel makeDrumLinePanel (int lineNumber)
+    private DrumPanel makeDrumLinePanel (int lineNumber)
     {
-        JPanel panel = new JPanel();
+        DrumPanel panel = new DrumPanel();
         panel.setBackground(Color.BLACK);
         panel.setLayout(new FlowLayout(FlowLayout.LEFT, 1, 1));
 
         AtomicInteger instrument = new AtomicInteger(-1);
+
         JComboBox<String> combo = new JComboBox<>(instrumentNames);
         combo.setSelectedIndex(lineNumber);
-        readFirstTwo(combo, instrument);
-        panel.add(combo);
+        getInstrument(combo, instrument);
         combo.addActionListener(e ->
         {
-            readFirstTwo(combo, instrument);
+            getInstrument(combo, instrument);
             System.out.println("Instrument: "+instrument.get());
         });
+        panel.addComboBox(combo);
 
         JButton but = new JButton("Clear");
-        panel.add(but);
         but.addActionListener(e ->
         {
             for (int i = 2; i < (drumSteps + 2); i++)
             {
                 JToggleButton b1 = (JToggleButton) panel.getComponent(i);
-                if (b1.isSelected())
-                {
-                    b1.doClick();
-                }
+                b1.setSelected(false);
             }
         });
+        panel.addClearButton(but);
 
         for (int buttonNo = 0; buttonNo < drumSteps; buttonNo++)
         {
@@ -201,6 +217,8 @@ public class Drumbox extends JPanel implements Serializable
                 // switch buttons on
                 //long event_id = lineNumber * 100 + jb.getMnemonic() * 2; // key_on is even
                 //long event_id2 = event_id + 1;  // key_off is odd
+                for (DrumPanel p : drumPanels)
+                    p.clearButton.doClick();
                 for (Long k : noteMap.keySet())
                 {
                     int linenum = (int) (k/100);
@@ -209,9 +227,10 @@ public class Drumbox extends JPanel implements Serializable
                     {
                         keynum = keynum/2; // real keynum
                         SerMidEvent ev = noteMap.get(k); // get the event
-
-                        JPanel p = drumPanels[linenum];
+                        int instrument = ((SerShortMessage)ev.getMessage()).getData1();
+                        DrumPanel p = drumPanels[linenum];
                         Component[] comps = p.getComponents();
+                        setInstrument(p.combo, instrument);
                         for (Component c : comps)
                         {
                             if (c instanceof JToggleButton)
@@ -219,13 +238,12 @@ public class Drumbox extends JPanel implements Serializable
                                 JToggleButton tb = (JToggleButton) c;
                                 if (tb.getMnemonic() == keynum)
                                 {
-                                    tb.doClick();
-                                    break; 
+                                    tb.setSelected(true);
+                                    break;
                                 }
                             }
                         }
                     }
-                    //System.out.println(linenum +" -- "+ keynum);
                 }
             }
             catch (Exception e1)
@@ -316,10 +334,28 @@ public class Drumbox extends JPanel implements Serializable
      * @param combo      Source
      * @param instrument Destination
      */
-    private void readFirstTwo (JComboBox combo, AtomicInteger instrument)
+    private void getInstrument (JComboBox combo, AtomicInteger instrument)
     {
-        String s = ((String) combo.getSelectedItem()).substring(0, 2);
-        instrument.set(Integer.parseInt(s));
+        int i = readFirstTwo((String) combo.getSelectedItem());
+        instrument.set(i);
+    }
+
+    private void setInstrument (JComboBox combo, int instrument)
+    {
+        for (int s=0; s<instrumentNames.length; s++)
+        {
+            if (readFirstTwo(instrumentNames[s]) == instrument)
+            {
+                combo.setSelectedIndex(s);
+                break;
+            }
+        }
+    }
+
+    private int readFirstTwo (String in)
+    {
+        String s = in.substring(0, 2);
+        return Integer.parseInt(s);
     }
 
     private JToggleButton createToggleButton (int buttonNumber,
@@ -400,7 +436,7 @@ public class Drumbox extends JPanel implements Serializable
 
     private void hideShowButtonRow (int s, boolean show)
     {
-        for (JPanel p : drumPanels)
+        for (DrumPanel p : drumPanels)
         {
             Component[] comps = p.getComponents();
             for (Component c : comps)
