@@ -3,7 +3,6 @@
 import javax.sound.midi.*;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
@@ -22,9 +21,17 @@ public class DesktopFrame extends JFrame
 
         JMenuBar bar = new JMenuBar(); // create menu bar
         JMenu addMenu = new JMenu("Open"); // create Add menu
-        JMenuItem newFrame = new JMenuItem("New Drum Pattern");
+        JMenuItem newFrame = new JMenuItem("New");
         JMenuItem load = new JMenuItem("Load"); // create Add menu
         JMenuItem combine = new JMenuItem("Combine"); // create Add menu
+
+        JMenu projMenu = new JMenu("Project"); // create Add menu
+        JMenuItem pload = new JMenuItem("Load"); // create Add menu
+        JMenuItem psave = new JMenuItem("Save"); // create Add menu
+        projMenu.add(pload);
+        projMenu.add(psave);
+        pload.addActionListener(event -> loadProject());
+        psave.addActionListener(event -> saveProject());
 
         docMenu = new JMenu("Patterns"); // create Add menu
 
@@ -33,6 +40,7 @@ public class DesktopFrame extends JFrame
         addMenu.add(combine);
 
         bar.add(addMenu); // add Add menu to menu bar
+        bar.add(projMenu);
         bar.add(docMenu);
         setJMenuBar(bar); // set menu bar for this application
 
@@ -42,6 +50,38 @@ public class DesktopFrame extends JFrame
         newFrame.addActionListener(event -> newDrumbox());
         combine.addActionListener(event -> combineAll());
         load.addActionListener(event -> loadDrumbox());
+    }
+
+    private void loadProject()
+    {
+        ObjectReader r = new ObjectReader("c:\\testproject");
+        for(;;)
+        {
+            Drumbox box = newDrumbox();
+            if (box == null)
+            {
+                System.out.println("Drumbox creation fail");
+                return;
+            }
+            if (!box.loadFromStream(r))
+            {
+                JInternalFrame ji = box.getMdiClient();
+                ji.dispose();
+                allBoxes.remove(box);
+                break;
+            }
+        }
+        r.close();
+    }
+
+    private void saveProject()
+    {
+        ObjectWriter w = new ObjectWriter("c:\\testproject");
+        for (Drumbox d : allBoxes)
+        {
+            d.savePattern(w);
+        }
+        w.close();
     }
 
     private void combineAll()
@@ -98,14 +138,27 @@ public class DesktopFrame extends JFrame
 
     private Drumbox newDrumbox()
     {
-        // create internal frame
+        // create internal   frame
         JInternalFrame frame = new JInternalFrame(
-                "Pattern #" + Drumbox.instanceNumber, true, false, true, true);
+                "Pattern #" + allBoxes.size(), true, false, true, true);
         try
         {
             Drumbox drumbox = new Drumbox(frame);
+            return newDrumbox(drumbox, frame);
+        }
+        catch (Exception e)
+        {
+            System.out.println(e);
+        }
+        return null;
+    }
+
+    private Drumbox newDrumbox(Drumbox drumbox, JInternalFrame frame)
+    {
+        try
+        {
             JMenuItem item = new JMenuItem(frame.getTitle());
-            item.addActionListener((ActionListener) e ->
+            item.addActionListener(e ->
             {
                 try
                 {

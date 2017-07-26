@@ -110,6 +110,12 @@ public class Drumbox extends JPanel implements Serializable
             };
     static int instanceNumber = 0;
     private final Sequencer sequencer;
+
+    public JInternalFrame getMdiClient ()
+    {
+        return mdiClient;
+    }
+
     private final JInternalFrame mdiClient;
     private final JSlider speedSlider = new JSlider();  // Speed for this pattern
     private final JTextField loopCount = new JTextField();
@@ -149,6 +155,12 @@ public class Drumbox extends JPanel implements Serializable
     {
         this (frame);
         loadPattern(patternPath);
+    }
+
+    public Drumbox (JInternalFrame frame, ObjectReader reader) throws Exception
+    {
+        this (frame);
+        loadPattern(reader);
     }
 
     /**
@@ -368,7 +380,7 @@ public class Drumbox extends JPanel implements Serializable
     private void savePattern (String fname) throws Exception
     {
         ObjectWriter w = new ObjectWriter(fname);
-        savePattern(fname, w);
+        savePattern(w);
         w.close();
     }
 
@@ -378,15 +390,28 @@ public class Drumbox extends JPanel implements Serializable
      * 2. speed value
      * 3. Loop value
      * 4. drum steps (size of line)
-     * @param filename path an full file name
      * @throws Exception smth gone wrong
      */
-    private void savePattern (String filename, ObjectWriter w) throws Exception
+    public void savePattern (ObjectWriter w)
     {
         w.putObject(noteMap);
         w.putObject(speedSlider.getValue());
         w.putObject(loopCount.getText());
         w.putObject(drumSteps);
+    }
+
+    public boolean loadFromStream (ObjectReader r)
+    {
+        try
+        {
+            loadPattern(r);
+            return true;
+        }
+        catch (Exception e)
+        {
+            System.out.println(e);
+            return false;
+        }
     }
 
     public void loadWithDialog()
@@ -416,16 +441,15 @@ public class Drumbox extends JPanel implements Serializable
     private void loadPattern (String filename) throws Exception
     {
         ObjectReader r = new ObjectReader(filename);
-        loadPattern (filename, r);
+        loadPattern (r);
         r.close();
     }
 
     /**
      * Loads one pattern from disk and initializes the drumbox
-     * @param filename path to disk file
      * @throws Exception if smth gone wrong
      */
-    private void loadPattern (String filename, ObjectReader r) throws Exception
+    public void loadPattern (ObjectReader r) throws Exception
     {
         noteMap = (HashMap<Long, SerMidEvent>)r.getObject();
         speedSlider.setValue((Integer)r.getObject());
