@@ -16,7 +16,7 @@ class DrumPanel extends JPanel
 {
     JButton clearButton;
     JComboBox combo;
-    ArrayList<JToggleButton> toggleButtons = new ArrayList<>();
+    final ArrayList<JToggleButton> toggleButtons = new ArrayList<>();
 
     Component addToggleButton (JToggleButton j)
     {
@@ -44,7 +44,7 @@ public class Drumbox extends JPanel implements Serializable
     private static final ImageIcon iconStop = new ImageIcon(Helper.loadImageFromRessource("stop.png"));
     private static final int LINES = 10;
     private static final int NOTELENGTH = 40;
-    static private final String[] instrumentNames = new String[]
+    private static final String[] instrumentNames = new String[]
             {
                     "27 High Q (GM2)",
                     "28 Slap (GM2)",
@@ -113,10 +113,10 @@ public class Drumbox extends JPanel implements Serializable
     private final JInternalFrame mdiClient;
     private final JSlider speedSlider = new JSlider();  // Speed for this pattern
     private final JTextField loopCount = new JTextField();
-    int thisInstNumber;
+    private int thisInstNumber;
     private HashMap<Long, SerMidEvent> noteMap = new HashMap<>();   // The event list
     private int drumSteps = 32; // Number of drumSteps
-    private DrumPanel[] drumPanels = new DrumPanel[LINES];
+    private final DrumPanel[] drumPanels = new DrumPanel[LINES];
 
     /**
      * Constructor: Build complete frame and show it
@@ -242,28 +242,7 @@ public class Drumbox extends JPanel implements Serializable
         JButton bload = new JButton("Load");
         panel.add(bload);
         bload.addActionListener(e ->
-        {
-            final JFileChooser fc = new JFileChooser();
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("Drum Pattern",
-                    "drmp");
-            fc.setFileFilter(filter);
-            if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
-            {
-                try
-                {
-                    String filename = fc.getSelectedFile().getCanonicalPath();
-                    loadPattern(filename);
-                }
-                catch (Exception e1)
-                {
-                    e1.printStackTrace();
-                }
-            }
-            else
-            {
-                System.out.println("Open command cancelled by user.");
-            }
-        });
+                loadWithDialog());
 
         JButton b2 = new JButton();
         b2.setIcon(iconPlay);
@@ -386,6 +365,13 @@ public class Drumbox extends JPanel implements Serializable
         return jb;
     }
 
+    private void savePattern (String fname) throws Exception
+    {
+        ObjectWriter w = new ObjectWriter(fname);
+        savePattern(fname, w);
+        w.close();
+    }
+
     /**
      * Saves one pattern to disk
      * 1. the note map containing all events
@@ -395,11 +381,43 @@ public class Drumbox extends JPanel implements Serializable
      * @param filename path an full file name
      * @throws Exception smth gone wrong
      */
-    private void savePattern (String filename) throws Exception
+    private void savePattern (String filename, ObjectWriter w) throws Exception
     {
-        Helper.serialize(filename,
-                noteMap, speedSlider.getValue(), loopCount.getText(),
-                drumSteps);
+        w.putObject(noteMap);
+        w.putObject(speedSlider.getValue());
+        w.putObject(loopCount.getText());
+        w.putObject(drumSteps);
+    }
+
+    public void loadWithDialog()
+    {
+        final JFileChooser fc = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Drum Pattern",
+                "drmp");
+        fc.setFileFilter(filter);
+        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
+        {
+            try
+            {
+                String filename = fc.getSelectedFile().getCanonicalPath();
+                loadPattern(filename);
+            }
+            catch (Exception e1)
+            {
+                e1.printStackTrace();
+            }
+        }
+        else
+        {
+            System.out.println("Open command cancelled by user.");
+        }
+    }
+
+    private void loadPattern (String filename) throws Exception
+    {
+        ObjectReader r = new ObjectReader(filename);
+        loadPattern (filename, r);
+        r.close();
     }
 
     /**
@@ -407,16 +425,13 @@ public class Drumbox extends JPanel implements Serializable
      * @param filename path to disk file
      * @throws Exception if smth gone wrong
      */
-    private void loadPattern (String filename) throws Exception
+    private void loadPattern (String filename, ObjectReader r) throws Exception
     {
-        Object[] objs = Helper.deSerialize(filename);
-        noteMap = (HashMap<Long, SerMidEvent>) objs[0];
-        Integer speedval = (Integer) objs[1];
-        String loops = (String) objs[2];
-        drumSteps = (Integer) objs[3];
+        noteMap = (HashMap<Long, SerMidEvent>)r.getObject();
+        speedSlider.setValue((Integer)r.getObject());
+        loopCount.setText((String)r.getObject());
+        drumSteps = (Integer)r.getObject();
         adjustDrumLineLength(drumSteps);
-        speedSlider.setValue(speedval);
-        loopCount.setText(loops);
         // switch buttons on
         //long event_id = lineNumber * 100 + jb.getMnemonic() * 2; // key_on is even
         //long event_id2 = event_id + 1;  // key_off is odd
@@ -445,7 +460,6 @@ public class Drumbox extends JPanel implements Serializable
                 }
             }
         }
-
     }
 
     /**
@@ -455,7 +469,7 @@ public class Drumbox extends JPanel implements Serializable
      */
     public Sequence createMIDI ()
     {
-        Sequence seq = null;
+        Sequence seq;
         try
         {
             seq = new Sequence(0.0f, 960);

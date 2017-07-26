@@ -3,6 +3,8 @@
 import javax.sound.midi.*;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,6 +13,7 @@ public class DesktopFrame extends JFrame
 {
     private JDesktopPane theDesktop;
     private ArrayList<Drumbox> allBoxes = new ArrayList<>();
+    private JMenu docMenu;
 
     // set up GUI
     public DesktopFrame ()
@@ -18,13 +21,19 @@ public class DesktopFrame extends JFrame
         super("MIDI Drumbox");
 
         JMenuBar bar = new JMenuBar(); // create menu bar
-        JMenu addMenu = new JMenu("New"); // create Add menu
-        JMenuItem newFrame = new JMenuItem("Drum Pattern");
+        JMenu addMenu = new JMenu("Open"); // create Add menu
+        JMenuItem newFrame = new JMenuItem("New Drum Pattern");
+        JMenuItem load = new JMenuItem("Load"); // create Add menu
         JMenuItem combine = new JMenuItem("Combine"); // create Add menu
 
+        docMenu = new JMenu("Patterns"); // create Add menu
+
         addMenu.add(newFrame); // add new frame item to Add menu
+        addMenu.add(load); // add new frame item to Add menu
         addMenu.add(combine);
+
         bar.add(addMenu); // add Add menu to menu bar
+        bar.add(docMenu);
         setJMenuBar(bar); // set menu bar for this application
 
         theDesktop = new JDesktopPane(); // create desktop pane
@@ -32,6 +41,7 @@ public class DesktopFrame extends JFrame
 
         newFrame.addActionListener(event -> newDrumbox());
         combine.addActionListener(event -> combineAll());
+        load.addActionListener(event -> loadDrumbox());
     }
 
     private void combineAll()
@@ -75,7 +85,18 @@ public class DesktopFrame extends JFrame
         }
     }
 
-    private void newDrumbox()
+    private void loadDrumbox()
+    {
+        Drumbox box = newDrumbox();
+        if (box == null)
+        {
+            System.out.println("Drumbox creation fail");
+            return;
+        }
+        box.loadWithDialog();
+    }
+
+    private Drumbox newDrumbox()
     {
         // create internal frame
         JInternalFrame frame = new JInternalFrame(
@@ -83,16 +104,32 @@ public class DesktopFrame extends JFrame
         try
         {
             Drumbox drumbox = new Drumbox(frame);
+            JMenuItem item = new JMenuItem(frame.getTitle());
+            item.addActionListener((ActionListener) e ->
+            {
+                try
+                {
+                    frame.setIcon(false);
+                }
+                catch (PropertyVetoException e1)
+                {
+                    System.out.println(e1);
+                }
+                frame.toFront();
+            });
+            docMenu.add(item);
             allBoxes.add(drumbox);
             frame.add(drumbox, BorderLayout.CENTER); // add panel
             frame.pack(); // set internal frame to size of contents
             theDesktop.add(frame); // attach internal frame
             frame.setVisible(true); // show internal frame
+            return drumbox;
         }
         catch (Exception ex)
         {
             System.out.println(ex);
         }
+        return null;
     }
 
     public static void main (String args[])
