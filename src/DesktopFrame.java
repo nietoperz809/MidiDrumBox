@@ -2,6 +2,9 @@
 // Demonstrating JDesktopPane.
 import javax.sound.midi.*;
 import javax.swing.*;
+import javax.swing.event.InternalFrameAdapter;
+import javax.swing.event.InternalFrameEvent;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.beans.PropertyVetoException;
 import java.io.File;
@@ -14,6 +17,7 @@ public class DesktopFrame extends JFrame
     private final ArrayList<Drumbox> allBoxes = new ArrayList<>();
     private final JMenu docMenu;
     private JTextField patternList;
+    private Drumbox currentActiveBox;
 
     // set up GUI
     private DesktopFrame ()
@@ -23,10 +27,10 @@ public class DesktopFrame extends JFrame
         setLayout(new BorderLayout());
 
         JMenuBar bar = new JMenuBar(); // create menu bar
-        JMenu addMenu = new JMenu("Open"); // create Add menu
+        JMenu addMenu = new JMenu("Single"); // create Add menu
         JMenuItem newFrame = new JMenuItem("New");
         JMenuItem load = new JMenuItem("Load"); // create Add menu
-        JMenuItem combine = new JMenuItem("Combine"); // create Add menu
+        JMenuItem clone = new JMenuItem("Clone"); // create Add menu
 
         JMenu projMenu = new JMenu("Project"); // create Add menu
         JMenuItem pload = new JMenuItem("Load"); // create Add menu
@@ -40,7 +44,7 @@ public class DesktopFrame extends JFrame
 
         addMenu.add(newFrame); // add new frame item to Add menu
         addMenu.add(load); // add new frame item to Add menu
-        addMenu.add(combine);
+        addMenu.add(clone);
 
         bar.add(addMenu); // add Add menu to menu bar
         bar.add(projMenu);
@@ -48,18 +52,46 @@ public class DesktopFrame extends JFrame
         setJMenuBar(bar); // set menu bar for this application
 
         theDesktop = new JDesktopPane(); // create desktop pane
+        Object o = theDesktop.getDesktopManager();
+        
+        theDesktop.setDesktopManager(new DefaultDesktopManager());
+
         add(theDesktop, BorderLayout.CENTER); // add desktop pane to frame
 
         add(createControlPanel(), BorderLayout.SOUTH);
 
         newFrame.addActionListener(event -> newDrumbox());
-        combine.addActionListener(event -> combineAll());
         load.addActionListener(event -> loadDrumbox());
+        clone.addActionListener(event -> cloneDrumbox());
     }
 
-    private void loadProject ()
+    private void loadProject()
     {
-        ObjectReader r = new ObjectReader("c:\\testproject");
+        final JFileChooser fc = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Drum Project",
+                "dproj");
+        fc.setFileFilter(filter);
+        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
+        {
+            try
+            {
+                String filename = fc.getSelectedFile().getCanonicalPath();
+                loadProject(filename);
+            }
+            catch (Exception e1)
+            {
+                e1.printStackTrace();
+            }
+        }
+        else
+        {
+            System.out.println("Open command cancelled by user.");
+        }
+    }
+
+    private void loadProject  (String filename)
+    {
+        ObjectReader r = new ObjectReader(filename);
         patternList.setText((String)r.getObject());
         for (; ; )
         {
@@ -81,9 +113,33 @@ public class DesktopFrame extends JFrame
         r.close();
     }
 
-    private void saveProject ()
+    private void saveProject()
     {
-        ObjectWriter w = new ObjectWriter("c:\\testproject");
+        final JFileChooser fc = new JFileChooser();
+        File f = new File("Drumproject#" +
+                "-" + System.currentTimeMillis() + ".dproj");
+        fc.setSelectedFile(f);
+        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION)
+        {
+            try
+            {
+                String name = fc.getSelectedFile().getCanonicalPath();
+                saveProject(name);
+            }
+            catch (Exception ex2)
+            {
+                System.out.println(ex2);
+            }
+        }
+        else
+        {
+            System.out.println("Open command cancelled by user.");
+        }
+    }
+
+    private void saveProject (String fname)
+    {
+        ObjectWriter w = new ObjectWriter(fname);
         w.putObject(patternList.getText());
         for (Drumbox d : allBoxes)
         {
@@ -171,10 +227,19 @@ public class DesktopFrame extends JFrame
     {
         // create internal   frame
         JInternalFrame frame = new JInternalFrame(
-                "Pattern #" + allBoxes.size(), true, false, true, true);
+                "P #" + allBoxes.size(), true, false, true, true);
         try
         {
             Drumbox drumbox = new Drumbox(frame);
+            frame.addInternalFrameListener(new InternalFrameAdapter()
+            {
+                @Override
+                public void internalFrameActivated (InternalFrameEvent e)
+                {
+                    currentActiveBox = drumbox;
+                    super.internalFrameActivated(e);
+                }
+            });
             JMenuItem item = new JMenuItem(frame.getTitle());
             item.addActionListener(e ->
             {
@@ -203,8 +268,17 @@ public class DesktopFrame extends JFrame
         return null;
     }
 
-    private void combineAll ()
+    private void cloneDrumbox()
     {
+        Drumbox b1 = currentActiveBox;
+        Drumbox box = newDrumbox();
+        if (box == null)
+        {
+            System.out.println("Drumbox creation fail");
+            return;
+        }
+        if(b1 != null)
+            box.cloneBox(b1);
     }
 
     private void loadDrumbox ()
@@ -221,11 +295,14 @@ public class DesktopFrame extends JFrame
     public static void main (String args[]) throws Exception
     {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
-        UIManager.put("ToggleButton.select", Color.RED);
-        DesktopFrame desktopFrame = new DesktopFrame();
-        desktopFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        desktopFrame.setSize(800, 600); // set frame size
-        desktopFrame.setVisible(true); // display frame
+        SwingUtilities.invokeLater(() ->
+        {
+            UIManager.put("ToggleButton.select", Color.RED);
+            DesktopFrame desktopFrame = new DesktopFrame();
+            desktopFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+            desktopFrame.setSize(800, 600); // set frame size
+            desktopFrame.setVisible(true); // display frame
+        });
     } // end main
 } // end class DesktopFrame
 
