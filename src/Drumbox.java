@@ -149,12 +149,22 @@ public class Drumbox extends JPanel implements Serializable
         loadPattern(patternPath);
     }
 
+    /**
+     * Constructor that loads pattern fron an open Objectreader
+     * @param frame Parent frame
+     * @param reader Objectreader
+     * @throws Exception smth failed
+     */
     public Drumbox (JInternalFrame frame, ObjectReader reader) throws Exception
     {
         this(frame);
         loadPattern(reader);
     }
 
+    /**
+     * returns the parent frame
+     * @return
+     */
     public JInternalFrame getMdiClient ()
     {
         return mdiClient;
@@ -226,7 +236,6 @@ public class Drumbox extends JPanel implements Serializable
         noteLength.setMajorTickSpacing(100);
         noteLength.setPaintTicks(true);
         noteLength.setSnapToTicks(true);
-
 
         loopCount.setToolTipText("Loop Count");
         loopCount.setPreferredSize(new Dimension(30, 30));
@@ -393,6 +402,11 @@ public class Drumbox extends JPanel implements Serializable
         return jb;
     }
 
+    /**
+     * Save pattern  to a file
+     * @param fname file name
+     * @throws Exception any failure
+     */
     private void savePattern (String fname) throws Exception
     {
         ObjectWriter w = new ObjectWriter(fname);
@@ -419,6 +433,11 @@ public class Drumbox extends JPanel implements Serializable
         w.putObject(noteLength.getValue());
     }
 
+    /**
+     * Initialize this Drumbox from an objectreader
+     * @param r the reader
+     * @return false if that failed
+     */
     public boolean loadFromStream (ObjectReader r)
     {
         try
@@ -448,6 +467,14 @@ public class Drumbox extends JPanel implements Serializable
                         (Integer) r.getObject());
     }
 
+    /**
+     * Loads a pattern given by variables
+     * @param h Hashmap containing the events
+     * @param spsl speed slider value
+     * @param lpc loop counter (as string)
+     * @param steps number of Drumsteps
+     * @param nl length of midi event
+     */
     private void loadPattern (HashMap<Long, SerMidEvent> h, int spsl,
                               String lpc, int steps, int nl)
     {
@@ -543,6 +570,10 @@ public class Drumbox extends JPanel implements Serializable
         return Integer.parseInt(s);
     }
 
+    /**
+     * Initialize this Drumbox from another Drumbox
+     * @param src the source drumbox
+     */
     public void cloneBox (Drumbox src)
     {
         loadPattern((HashMap<Long, SerMidEvent>)src.noteMap.clone(), src.speedSlider.getValue(),

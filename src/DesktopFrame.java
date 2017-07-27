@@ -52,8 +52,6 @@ public class DesktopFrame extends JFrame
         setJMenuBar(bar); // set menu bar for this application
 
         theDesktop = new JDesktopPane(); // create desktop pane
-        Object o = theDesktop.getDesktopManager();
-        
         theDesktop.setDesktopManager(new DefaultDesktopManager());
 
         add(theDesktop, BorderLayout.CENTER); // add desktop pane to frame
@@ -65,6 +63,9 @@ public class DesktopFrame extends JFrame
         clone.addActionListener(event -> cloneDrumbox());
     }
 
+    /**
+     * Menu click: load
+     */
     private void loadProject()
     {
         final JFileChooser fc = new JFileChooser();
@@ -89,6 +90,11 @@ public class DesktopFrame extends JFrame
         }
     }
 
+    /**
+     * Loads project by file name
+     * Creates a drum box with that project
+     * @param filename file name of prj
+     */
     private void loadProject  (String filename)
     {
         ObjectReader r = new ObjectReader(filename);
@@ -113,6 +119,9 @@ public class DesktopFrame extends JFrame
         r.close();
     }
 
+    /**
+     * Menu click: save
+     */
     private void saveProject()
     {
         final JFileChooser fc = new JFileChooser();
@@ -137,6 +146,10 @@ public class DesktopFrame extends JFrame
         }
     }
 
+    /**
+     * Save project in to file given by name
+     * @param fname file name
+     */
     private void saveProject (String fname)
     {
         ObjectWriter w = new ObjectWriter(fname);
@@ -148,6 +161,10 @@ public class DesktopFrame extends JFrame
         w.close();
     }
 
+    /**
+     * Create the Panel at the bottom of desktop
+     * @return a new Panel
+     */
     private JPanel createControlPanel ()
     {
         JPanel p = new JPanel();
@@ -171,17 +188,58 @@ public class DesktopFrame extends JFrame
                 {
                     ar.add (Integer.parseInt(s));
                 }
-                catch (Exception unused)
+                catch (Exception ignored)
                 {
 
                 }
             }
-            createMidi(ar);
+            saveMidi(ar);
         });
         return p;
     }
 
-    private void createMidi(ArrayList<Integer> ar)
+    private void saveMidi (ArrayList<Integer> ar)
+    {
+        final JFileChooser fc = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Midi Files",
+                "mid");
+        fc.setFileFilter(filter);
+        File f = new File("midifile_" +
+                System.currentTimeMillis() + ".mid");
+        fc.setSelectedFile(f);
+        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION)
+        {
+            try
+            {
+                f = fc.getSelectedFile();
+                try
+                {
+                    Sequence seq = createMidi(ar);
+                    MidiSystem.write(seq, 1, f);
+                    JOptionPane.showMessageDialog(this, "Saved to: " + f.getAbsolutePath(), "Drum Tool", JOptionPane.INFORMATION_MESSAGE);
+                }
+                catch (IOException e1)
+                {
+                    JOptionPane.showMessageDialog(this, "Saving fail: " + e1, "Drum Tool", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+            catch (Exception ex2)
+            {
+                System.out.println(ex2);
+            }
+        }
+        else
+        {
+            System.out.println("Open command cancelled by user.");
+        }
+    }
+
+    /**
+     * Create a midi file from all drum boxes and controlled
+     * by an array of numbers
+     * @param ar sequence of patterns
+     */
+    private Sequence createMidi(ArrayList<Integer> ar)
     {
         try
         {
@@ -205,27 +263,21 @@ public class DesktopFrame extends JFrame
                 }
                 offset += (tr.ticks() + box.getSliderValue());
             }
-            File f = new File("c:\\midfile.mid");
-            try
-            {
-                MidiSystem.write(s_out, 1, f);
-                JOptionPane.showMessageDialog(this, "Saved to: " + f.getAbsolutePath(), "Drum Tool", JOptionPane.INFORMATION_MESSAGE);
-            }
-            catch (IOException e1)
-            {
-                JOptionPane.showMessageDialog(this, "Saving fail: " + e1, "Drum Tool", JOptionPane.ERROR_MESSAGE);
-            }
-
+            return s_out;
         }
-        catch (InvalidMidiDataException e)
+        catch (Exception e)
         {
             System.out.println(e);
         }
+        return null;
     }
 
+    /**
+     * Create a new Drumbox and shows it as MDI frame
+     * @return The drum box
+     */
     private Drumbox newDrumbox ()
     {
-        // create internal   frame
         JInternalFrame frame = new JInternalFrame(
                 "P #" + allBoxes.size(), true, false, true, true);
         try
@@ -268,19 +320,25 @@ public class DesktopFrame extends JFrame
         return null;
     }
 
+    /**
+     * Menu click: clone
+     */
     private void cloneDrumbox()
     {
-        Drumbox b1 = currentActiveBox;
+        Drumbox template = currentActiveBox;
         Drumbox box = newDrumbox();
         if (box == null)
         {
             System.out.println("Drumbox creation fail");
             return;
         }
-        if(b1 != null)
-            box.cloneBox(b1);
+        if(template != null)
+            box.cloneBox(template);
     }
 
+    /**
+     * Load Drumbox from file
+     */
     private void loadDrumbox ()
     {
         Drumbox box = newDrumbox();
