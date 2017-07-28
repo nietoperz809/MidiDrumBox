@@ -55,7 +55,6 @@ public class DesktopFrame extends JFrame
         theDesktop.setDesktopManager(new DefaultDesktopManager());
 
         add(theDesktop, BorderLayout.CENTER); // add desktop pane to frame
-
         add(createControlPanel(), BorderLayout.SOUTH);
 
         newFrame.addActionListener(event -> newDrumbox());
@@ -168,7 +167,8 @@ public class DesktopFrame extends JFrame
     private JPanel createControlPanel ()
     {
         JPanel p = new JPanel();
-        p.setLayout(new FlowLayout(FlowLayout.LEFT));
+        p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        p.setBorder (BorderFactory.createLineBorder(Color.BLACK));
 
         patternList = new JTextField();
         patternList.setBackground(Color.white);
@@ -261,7 +261,7 @@ public class DesktopFrame extends JFrame
                     ev.setTick(ev.getTick() + offset);
                     t_out.add(ev);
                 }
-                offset += (tr.ticks() + box.getSliderValue());
+                offset += (tr.ticks() + box.getSpeedValue());
             }
             return s_out;
         }
@@ -276,10 +276,12 @@ public class DesktopFrame extends JFrame
      * Create a new Drumbox and shows it as MDI frame
      * @return The drum box
      */
-    private Drumbox newDrumbox ()
+    private Drumbox newDrumbox()
     {
         JInternalFrame frame = new JInternalFrame(
                 "P #" + allBoxes.size(), true, false, true, true);
+        //Container c = frame.getContentPane();
+        //GridLayout gl = new GridLayout(4, 1,0,0);
         try
         {
             Drumbox drumbox = new Drumbox(frame);
@@ -288,7 +290,7 @@ public class DesktopFrame extends JFrame
                 @Override
                 public void internalFrameActivated (InternalFrameEvent e)
                 {
-                    currentActiveBox = drumbox;
+                    currentActiveBox = drumbox; // Store the current active Drumbox
                     super.internalFrameActivated(e);
                 }
             });
@@ -308,6 +310,7 @@ public class DesktopFrame extends JFrame
             docMenu.add(item);
             allBoxes.add(drumbox);
             frame.add(drumbox, BorderLayout.CENTER); // add panel
+
             frame.pack(); // set internal frame to size of contents
             theDesktop.add(frame); // attach internal frame
             frame.setVisible(true); // show internal frame
@@ -353,12 +356,13 @@ public class DesktopFrame extends JFrame
     public static void main (String args[]) throws Exception
     {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
+        //UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
         SwingUtilities.invokeLater(() ->
         {
             UIManager.put("ToggleButton.select", Color.RED);
             DesktopFrame desktopFrame = new DesktopFrame();
             desktopFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-            desktopFrame.setSize(800, 600); // set frame size
+            desktopFrame.setSize(1000, 600); // set frame size
             desktopFrame.setVisible(true); // display frame
         });
     } // end main

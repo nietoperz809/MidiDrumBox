@@ -7,108 +7,18 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.io.File;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class DrumPanel extends JPanel
-{
-    final ArrayList<JToggleButton> toggleButtons = new ArrayList<>();
-    JButton clearButton;
-    JComboBox combo;
-
-    Component addToggleButton (JToggleButton j)
-    {
-        toggleButtons.add(j);
-        return add(j);
-    }
-
-
-    Component addComboBox (JComboBox j)
-    {
-        combo = j;
-        return add(j);
-    }
-
-    Component addClearButton (JButton j)
-    {
-        clearButton = j;
-        return add(j);
-    }
-}
-
 public class Drumbox extends JPanel implements Serializable
 {
-    private static final ImageIcon iconPlay = new ImageIcon(Helper.loadImageFromRessource("play.png"));
-    private static final ImageIcon iconStop = new ImageIcon(Helper.loadImageFromRessource("stop.png"));
+    private static final ImageIcon iconPlay = new ImageIcon(Helper.loadImageFromResource("play.png"));
+    private static final ImageIcon iconStop = new ImageIcon(Helper.loadImageFromResource("stop.png"));
     private static final int LINES = 10;
-    private static final String[] instrumentNames = new String[]
-            {
-                    "27 High Q (GM2)",
-                    "28 Slap (GM2)",
-                    "29 Scratch Push (GM2)",
-                    "30 Scratch Pull (GM2)",
-                    "31 Sticks (GM2)",
-                    "32 Square Click (GM2)",
-                    "33 Metronome Click (GM2)",
-                    "34 Metronome Bell (GM2)",
-                    "35 Bass Drum 2",
-                    "36 Bass Drum 1",
-                    "37 Side Stick",
-                    "38 Snare Drum 1",
-                    "39 Hand Clap",
-                    "40 Snare Drum 2",
-                    "41 Low Tom 2",
-                    "42 Closed Hi-hat",
-                    "43 Low Tom 1",
-                    "44 Pedal Hi-hat",
-                    "45 Mid Tom 2",
-                    "46 Open Hi-hat",
-                    "47 Mid Tom 1",
-                    "48 High Tom 2",
-                    "49 Crash Cymbal 1",
-                    "50 High Tom 1",
-                    "51 Ride Cymbal 1",
-                    "52 Chinese Cymbal",
-                    "53 Ride Bell",
-                    "54 Tambourine",
-                    "55 Splash Cymbal",
-                    "56 Cowbell",
-                    "57 Crash Cymbal 2",
-                    "58 Vibra Slap",
-                    "59 Ride Cymbal 2",
-                    "60 High Bongo",
-                    "61 Low Bongo",
-                    "62 Mute High Conga",
-                    "63 Open High Conga",
-                    "64 Low Conga",
-                    "65 High Timbale",
-                    "66 Low Timbale",
-                    "67 High Agogo",
-                    "68 Low Agogo",
-                    "69 Cabasa",
-                    "70 Maracas",
-                    "71 Short Whistle",
-                    "72 Long Whistle",
-                    "73 Short Guiro",
-                    "74 Long Guiro",
-                    "75 Claves",
-                    "76 High Wood Block",
-                    "77 Low Wood Block",
-                    "78 Mute Cuica",
-                    "79 Open Cuica",
-                    "80 Mute Triangle",
-                    "81 Open Triangle",
-                    "82 Shaker (GM2)",
-                    "83 Jingle Bell (GM2)",
-                    "84 Belltree (GM2)",
-                    "85 Castanets (GM2)",
-                    "86 Mute Surdo (GM2)",
-                    "87 Open Surdo (GM2)"
-            };
-    static int instanceNumber = 0;
-    private final JSlider noteLength = new JSlider();
+    private static int instanceNumber = 0;
+    private final JSlider noteLengthSlider = new JSlider();
+    private final JSlider volSlider = new JSlider();
     private final Sequencer sequencer;
     private final JInternalFrame mdiClient;
     private final JSlider speedSlider = new JSlider();  // Speed for this pattern
@@ -116,6 +26,7 @@ public class Drumbox extends JPanel implements Serializable
     private final DrumPanel[] drumPanels = new DrumPanel[LINES];
     private HashMap<Long, SerMidEvent> noteMap = new HashMap<>();   // The event list
     private int drumSteps = 32; // Number of drumSteps
+
     /**
      * Constructor: Build complete frame and show it
      *
@@ -124,14 +35,15 @@ public class Drumbox extends JPanel implements Serializable
     public Drumbox (JInternalFrame frame) throws Exception
     {
         mdiClient = frame;
+        GridLayout gl = new GridLayout(LINES + 1, 1,0,0);
+        this.setLayout(gl);
         sequencer = MidiSystem.getSequencer();
-        setLayout(new GridLayout(LINES + 1, 1));
         for (int s = 0; s < LINES; s++)
         {
             drumPanels[s] = makeDrumLinePanel(s);
-            add(drumPanels[s]);
+            this.add(drumPanels[s]);
         }
-        add(makeControlPanel());
+        this.add(makeControlPanel());
         setVisible(true);
         instanceNumber++;
     }
@@ -162,8 +74,8 @@ public class Drumbox extends JPanel implements Serializable
     }
 
     /**
-     * returns the parent frame
-     * @return
+     * Get the parent frame
+     * @return parent frame
      */
     public JInternalFrame getMdiClient ()
     {
@@ -178,13 +90,17 @@ public class Drumbox extends JPanel implements Serializable
      */
     private DrumPanel makeDrumLinePanel (int lineNumber)
     {
-        DrumPanel panel = new DrumPanel();
+        DrumPanel panel = new DrumPanel(lineNumber, this);
+        panel.setBorder(BorderFactory.createEmptyBorder());
+//        panel.setPreferredSize(new Dimension(32*20, 30));
+
         panel.setBackground(Color.BLACK);
-        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 1, 1));
+        FlowLayout la = new FlowLayout(FlowLayout.LEFT, 0, 0);
+        panel.setLayout(la);
 
         AtomicInteger instrument = new AtomicInteger(-1);
 
-        JComboBox<String> combo = new JComboBox<>(instrumentNames);
+        JComboBox<String> combo = new JComboBox<>(DrumKit.instrumentNames);
         combo.setSelectedIndex(lineNumber);
         getInstrument(combo, instrument);
         combo.addActionListener(e ->
@@ -195,13 +111,7 @@ public class Drumbox extends JPanel implements Serializable
         panel.addComboBox(combo);
 
         JButton but = new JButton("Clear");
-        but.addActionListener(e ->
-        {
-            for (JToggleButton b1 : panel.toggleButtons)
-            {
-                b1.setSelected(false);
-            }
-        });
+        but.setMargin(new Insets(0,0,0,0));
         panel.addClearButton(but);
 
         for (int buttonNo = 0; buttonNo < drumSteps; buttonNo++)
@@ -219,9 +129,37 @@ public class Drumbox extends JPanel implements Serializable
     private JPanel makeControlPanel ()
     {
         JPanel panel = new JPanel();
-        panel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        panel.setPreferredSize(new Dimension(200,30));
+
+        JButton bplus = new JButton("+");
+        bplus.setMargin (new Insets(0,0,0,0));
+        bplus.setToolTipText("Increase Pattern");
+        bplus.addActionListener(e ->
+        {
+            if (drumSteps < 32)
+            {
+                drumSteps++;
+                adjustDrumLineLength(drumSteps);
+            }
+        });
+        panel.add(bplus);
+
+        JButton bminus = new JButton("-");
+        bminus.setMargin (new Insets(0,0,0,0));
+        bminus.setToolTipText("Make Pattern smaller");
+        bminus.addActionListener(e ->
+        {
+            if (drumSteps > 1)
+            {
+                drumSteps--;
+                adjustDrumLineLength(drumSteps);
+            }
+        });
+        panel.add(bminus);
 
         speedSlider.setToolTipText("Track Speed");
+        loopCount.setPreferredSize(new Dimension(100,20));
         speedSlider.setMinimum(100);
         speedSlider.setMaximum(1000);
         speedSlider.setMinorTickSpacing(25);
@@ -229,22 +167,34 @@ public class Drumbox extends JPanel implements Serializable
         speedSlider.setPaintTicks(true);
         speedSlider.setSnapToTicks(true);
 
-        noteLength.setToolTipText("Event Length");
-        noteLength.setMinimum(50);
-        noteLength.setMaximum(1000);
-        noteLength.setMinorTickSpacing(25);
-        noteLength.setMajorTickSpacing(100);
-        noteLength.setPaintTicks(true);
-        noteLength.setSnapToTicks(true);
+        noteLengthSlider.setToolTipText("Event Length");
+        loopCount.setPreferredSize(new Dimension(100,20));
+        noteLengthSlider.setMinimum(5);
+        noteLengthSlider.setMaximum(1000);
+        noteLengthSlider.setMinorTickSpacing(25);
+        noteLengthSlider.setMajorTickSpacing(100);
+        noteLengthSlider.setPaintTicks(true);
+        noteLengthSlider.setSnapToTicks(true);
 
+        volSlider.setToolTipText("Event Volume");
+        loopCount.setPreferredSize(new Dimension(100,20));
+        volSlider.setMinimum(0);
+        volSlider.setMaximum(127);
+        volSlider.setMinorTickSpacing(4);
+        volSlider.setMajorTickSpacing(16);
+        volSlider.setPaintTicks(true);
+        volSlider.setSnapToTicks(true);
+        volSlider.setValue(127);
+
+        loopCount.setSize(20,20);
         loopCount.setToolTipText("Loop Count");
-        loopCount.setPreferredSize(new Dimension(30, 30));
         loopCount.setText("1");
 
-        JButton b1 = new JButton("Save");
-        b1.setToolTipText("Save Pattern to disk");
-        panel.add(b1);
-        b1.addActionListener(e ->
+        JButton bsave = new JButton("Save");
+        bsave.setMargin (new Insets(1,1,1,1));
+        bsave.setToolTipText("Save Pattern to disk");
+        panel.add(bsave);
+        bsave.addActionListener(e ->
         {
             final JFileChooser fc = new JFileChooser();
             File f = new File("Drumpattern#" +
@@ -270,12 +220,14 @@ public class Drumbox extends JPanel implements Serializable
         });
 
         JButton bload = new JButton("Load");
+        bload.setMargin (new Insets(1,1,1,1));
         bload.setToolTipText("Load Pattern from disk");
         panel.add(bload);
         bload.addActionListener(e ->
                 loadWithDialog());
 
         JToggleButton b2 = new JToggleButton();
+        b2.setMargin (new Insets(1,1,1,1));
         b2.setToolTipText("Play/Stop pattern");
         b2.setPressedIcon(iconStop);
         b2.setIcon(iconPlay);
@@ -314,33 +266,10 @@ public class Drumbox extends JPanel implements Serializable
         });
 
         panel.add(speedSlider);
-        panel.add(noteLength);
+        panel.add(noteLengthSlider);
+        panel.add(volSlider);
 
         panel.add(loopCount);
-
-        JButton bplus = new JButton("+");
-        bplus.setToolTipText("Increase Pattern");
-        bplus.addActionListener(e ->
-        {
-            if (drumSteps < 32)
-            {
-                drumSteps++;
-                adjustDrumLineLength(drumSteps);
-            }
-        });
-        panel.add(bplus);
-
-        JButton bminus = new JButton("-");
-        bminus.setToolTipText("Make Pattern smaller");
-        bminus.addActionListener(e ->
-        {
-            if (drumSteps > 1)
-            {
-                drumSteps--;
-                adjustDrumLineLength(drumSteps);
-            }
-        });
-        panel.add(bminus);
 
         return panel;
     }
@@ -358,34 +287,36 @@ public class Drumbox extends JPanel implements Serializable
     }
 
     /**
-     * Create a drum checkbox
+     * Create a drum ToggleButton
      *
      * @param buttonNumber Number of button in line (ascending, begins at 0)
      * @param lineNumber   Number of butten line (also 0-based)
      * @param instrument   Instrument number used by this drum line
-     * @return
+     * @return The toggle button
      */
     private JToggleButton createToggleButton (int buttonNumber,
                                               int lineNumber,
                                               AtomicInteger instrument)
     {
         JToggleButton jb = new JToggleButton();
+        jb.setMargin(new Insets(0,0,0,0));
         jb.setMnemonic(buttonNumber);
         jb.setPreferredSize(new Dimension(20, 20));
         jb.addActionListener(e ->
         {
-            long event_id = lineNumber * 100 + jb.getMnemonic() * 2; // key_on is even
-            long event_id2 = event_id + 1;  // key_off is odd
+            EventIdPair ev = new EventIdPair(jb.getMnemonic(), lineNumber);
             if (jb.isSelected())
             {
                 try
                 {
+                    int instr = instrument.get();
                     SerShortMessage on = new SerShortMessage(ShortMessage.NOTE_ON,
-                            9, instrument.get(), 127);
+                            9, instr, volSlider.getValue());
                     SerShortMessage off = new SerShortMessage(ShortMessage.NOTE_OFF,
-                            9, instrument.get(), 0);
-                    putEvent(event_id, new SerMidEvent(on, buttonNumber));
-                    putEvent(event_id2, new SerMidEvent(off, buttonNumber));
+                            9, instr, 0);
+                    putEvent(ev.getKeyOnId(), new SerMidEvent(on, buttonNumber));
+                    putEvent(ev.getKeyOffId(), new SerMidEvent(off, buttonNumber));
+                    jb.setToolTipText (DrumPanel.createTooltipText(instr, volSlider.getValue()));
                 }
                 catch (Exception e1)
                 {
@@ -394,11 +325,11 @@ public class Drumbox extends JPanel implements Serializable
             }
             else
             {
-                deleteEvent(event_id);
-                deleteEvent(event_id2);
+                deleteEvent(ev);
+                jb.setToolTipText(null);
             }
         });
-        jb.setBorder(BorderFactory.createLineBorder(Color.GREEN));
+        jb.setBorder(BorderFactory.createLineBorder(Color.GREEN,1));
         return jb;
     }
 
@@ -421,8 +352,6 @@ public class Drumbox extends JPanel implements Serializable
      * 3. Loop value
      * 4. drum steps (size of line)
      * 5. note Length
-     *
-     * @throws Exception smth gone wrong
      */
     public void savePattern (ObjectWriter w)
     {
@@ -430,7 +359,8 @@ public class Drumbox extends JPanel implements Serializable
         w.putObject(speedSlider.getValue());
         w.putObject(loopCount.getText());
         w.putObject(drumSteps);
-        w.putObject(noteLength.getValue());
+        w.putObject(noteLengthSlider.getValue());
+        w.putObject(volSlider.getValue());
     }
 
     /**
@@ -464,49 +394,52 @@ public class Drumbox extends JPanel implements Serializable
                         (Integer) r.getObject(),
                         (String) r.getObject(),
                         (Integer) r.getObject(),
-                        (Integer) r.getObject());
+                        (Integer) r.getObject(),
+                        (Integer)r.getObject());
     }
 
     /**
      * Loads a pattern given by variables
-     * @param h Hashmap containing the events
-     * @param spsl speed slider value
-     * @param lpc loop counter (as string)
+     * @param eventHashMap Hashmap containing the events
+     * @param speedSliderValue speed slider value
+     * @param loopCounterString loop counter (as string)
      * @param steps number of Drumsteps
-     * @param nl length of midi event
+     * @param eventLength length of midi event
      */
-    private void loadPattern (HashMap<Long, SerMidEvent> h, int spsl,
-                              String lpc, int steps, int nl)
+    private void loadPattern (HashMap<Long, SerMidEvent> eventHashMap, int speedSliderValue,
+                              String loopCounterString, int steps, int eventLength,
+                              int eventVolume)
     {
-        noteMap = h;
-        speedSlider.setValue(spsl);
-        loopCount.setText(lpc);
+        speedSlider.setValue(speedSliderValue);
+        loopCount.setText(loopCounterString);
         drumSteps = steps;
-        noteLength.setValue(nl);
+        noteLengthSlider.setValue(eventLength);
+        volSlider.setValue(eventVolume);
         adjustDrumLineLength(drumSteps);
-        // switch buttons on
-        //long event_id = lineNumber * 100 + jb.getMnemonic() * 2; // key_on is even
-        //long event_id2 = event_id + 1;  // key_off is odd
-        for (DrumPanel p : drumPanels)
-        {
-            p.clearButton.doClick();
-        }
+        // switch buttons off
+//        for (DrumPanel p : drumPanels)
+//        {
+//            p.clearButton.doClick();
+//        }
+        noteMap = eventHashMap;
         for (Long k : noteMap.keySet())
         {
-            int linenum = (int) (k / 100);
-            int keynum = (int) (k % 100);
-            if (keynum % 2 == 0)
+            int linenum = EventIdPair.getRowNumber(k);
+            int keynum = EventIdPair.getColumnNumber(k);
+            if (EventIdPair.isKeyOnEvent(k)) // get instrument from keyon event
             {
-                keynum = keynum / 2; // real keynum
                 SerMidEvent ev = noteMap.get(k); // get the event
                 int instrument = ((SerShortMessage) ev.getMessage()).getData1();
-                DrumPanel p = drumPanels[linenum];
-                setInstrument(p.combo, instrument);
-                for (JToggleButton c : p.toggleButtons)
+                int volume = ((SerShortMessage) ev.getMessage()).getData2();
+                DrumPanel panel = drumPanels[linenum];
+                setInstrument(panel.combo, instrument);
+                for (JToggleButton toggleButton : panel.toggleButtons)
                 {
-                    if (c.getMnemonic() == keynum)
+                    if (toggleButton.getMnemonic() == keynum)
                     {
-                        c.setSelected(true);
+                        toggleButton.setSelected(true);
+                        toggleButton.setToolTipText (
+                                DrumPanel.createTooltipText(instrument, volume));
                         break;
                     }
                 }
@@ -548,14 +481,20 @@ public class Drumbox extends JPanel implements Serializable
      */
     private void setInstrument (JComboBox combo, int instrument)
     {
-        for (int s = 0; s < instrumentNames.length; s++)
+        combo.setSelectedIndex(getInstrumentNameIndex(instrument));
+    }
+
+    public static int getInstrumentNameIndex (int instrument)
+    {
+        for (int s = 0; s < DrumKit.instrumentNames.length; s++)
         {
-            if (readFirstTwo(instrumentNames[s]) == instrument)
+            if (readFirstTwo(DrumKit.instrumentNames[s]) == instrument)
             {
-                combo.setSelectedIndex(s);
-                break;
+                return s;
             }
         }
+        System.out.println("wrong instrument");
+        return -1;
     }
 
     /**
@@ -564,7 +503,7 @@ public class Drumbox extends JPanel implements Serializable
      * @param in String beginning with number
      * @return The number
      */
-    private int readFirstTwo (String in)
+    private static int readFirstTwo (String in)
     {
         String s = in.substring(0, 2);
         return Integer.parseInt(s);
@@ -577,7 +516,8 @@ public class Drumbox extends JPanel implements Serializable
     public void cloneBox (Drumbox src)
     {
         loadPattern((HashMap<Long, SerMidEvent>)src.noteMap.clone(), src.speedSlider.getValue(),
-                    src.loopCount.getText(), src.drumSteps, src.noteLength.getValue());
+                    src.loopCount.getText(), src.drumSteps, src.noteLengthSlider.getValue(),
+                src.volSlider.getValue());
     }
 
     public void loadWithDialog ()
@@ -642,7 +582,7 @@ public class Drumbox extends JPanel implements Serializable
                 }
                 else
                 {
-                    clone.setTick(tick + noteLength.getValue());
+                    clone.setTick(tick + noteLengthSlider.getValue());
                 }
                 tr.add(clone);
             }
@@ -676,12 +616,18 @@ public class Drumbox extends JPanel implements Serializable
         }
     }
 
+    public void deleteEvent (EventIdPair ep)
+    {
+        deleteEvent(ep.getKeyOnId());
+        deleteEvent(ep.getKeyOffId());
+    }
+
     /**
      * Return speed base of this Drumbox
      *
      * @return The speed value
      */
-    public int getSliderValue ()
+    public int getSpeedValue ()
     {
         return speedSlider.getValue();
     }
