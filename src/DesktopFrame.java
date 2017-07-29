@@ -16,13 +16,15 @@ public class DesktopFrame extends JFrame
     private final JDesktopPane theDesktop;
     private final ArrayList<Drumbox> allBoxes = new ArrayList<>();
     private final JMenu docMenu;
+    private final static String title ="MIDI Drumbox";
     private JTextField patternList;
     private Drumbox currentActiveBox;
+    private String currentProjectName = "";
 
     // set up GUI
     private DesktopFrame ()
     {
-        super("MIDI Drumbox");
+        super(title);
 
         setLayout(new BorderLayout());
 
@@ -77,6 +79,8 @@ public class DesktopFrame extends JFrame
             {
                 String filename = fc.getSelectedFile().getCanonicalPath();
                 loadProject(filename);
+                currentProjectName = fc.getSelectedFile().getName();
+                setTitle(title + " -- " + currentProjectName);
             }
             catch (Exception e1)
             {

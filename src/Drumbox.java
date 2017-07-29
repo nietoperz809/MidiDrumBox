@@ -133,7 +133,7 @@ public class Drumbox extends JPanel implements Serializable
         panel.setPreferredSize(new Dimension(200,30));
 
         JButton bplus = new JButton("+");
-        bplus.setMargin (new Insets(0,0,0,0));
+        bplus.setMargin (new Insets(0,5,0,5));
         bplus.setToolTipText("Increase Pattern");
         bplus.addActionListener(e ->
         {
@@ -146,7 +146,7 @@ public class Drumbox extends JPanel implements Serializable
         panel.add(bplus);
 
         JButton bminus = new JButton("-");
-        bminus.setMargin (new Insets(0,0,0,0));
+        bminus.setMargin (new Insets(0,5,0,5));
         bminus.setToolTipText("Make Pattern smaller");
         bminus.addActionListener(e ->
         {
@@ -186,7 +186,7 @@ public class Drumbox extends JPanel implements Serializable
         volSlider.setSnapToTicks(true);
         volSlider.setValue(127);
 
-        loopCount.setSize(20,20);
+        loopCount.setSize(5,20);
         loopCount.setToolTipText("Loop Count");
         loopCount.setText("1");
 
@@ -470,7 +470,7 @@ public class Drumbox extends JPanel implements Serializable
                 }
             }
         }
-        mdiClient.pack();
+        //mdiClient.pack();
     }
 
     /**
