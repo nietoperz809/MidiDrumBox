@@ -47,7 +47,7 @@ class DrumPanel extends JPanel
     static String createTooltipText (int instr, int volume)
     {
         return "<html>"+
-                DrumKit.instrumentNames[Drumbox.getInstrumentNameIndex(instr)]+
+                DrumKit.instrumentNames[DrumKit.getInstrumentNameIndex(instr)]+
                 "<br>Volume: "+volume+
                 "</html>";
     }

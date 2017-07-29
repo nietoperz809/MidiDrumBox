@@ -7,6 +7,10 @@ public class ObjectWriter
     private FileOutputStream f_out;
     private ObjectOutputStream obj_out;
 
+    /**
+     * Open Obj writer
+     * @param fname file where objects dwell
+     */
     public ObjectWriter (String fname)
     {
         try
@@ -20,6 +24,10 @@ public class ObjectWriter
         }
     }
 
+    /**
+     * Write one object
+     * @param o The object
+     */
     public void putObject (Object o)
     {
         try
@@ -32,6 +40,10 @@ public class ObjectWriter
         }
     }
 
+    /**
+     * Close writer
+     * Must finally be called
+     */
     public void close()
     {
         try

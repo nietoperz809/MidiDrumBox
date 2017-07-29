@@ -7,6 +7,10 @@ public class ObjectReader
     private FileInputStream f_in;
     private ObjectInputStream obj_in;
 
+    /**
+     * Constructor, set file name
+     * @param fname file name
+     */
     public ObjectReader (String fname)
     {
         try
@@ -20,19 +24,27 @@ public class ObjectReader
         }
     }
 
+    /**
+     * Get one Object
+     * @return the object or null
+     */
     public Object getObject()
     {
         try
         {
             return obj_in.readObject();
         }
-        catch (Exception e)
+        catch (Exception unused)
         {
-            System.out.println(e);
+            System.out.println("no more objects");
             return null;
         }
     }
 
+    /**
+     * Close Object reader
+     * must finally be called
+     */
     public void close()
     {
         try

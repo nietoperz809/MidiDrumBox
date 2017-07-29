@@ -50,7 +50,7 @@ class EventIdPair
     /**
      * Create EventIdPair
      * @param x Number of Button in every  DrumPanel (Column)
-     * @param y Number of DrumPanel in DrumBox (Row)
+     * @param y Number of DrumPanels in DrumBox (Row)
      */
     EventIdPair (int x, int y)
     {
@@ -58,14 +58,3 @@ class EventIdPair
         event_id2 = event_id + 1;
     }
 }
-
-/*
-        for (Long k : noteMap.keySet())
-        {
-            int linenum = (int) (k / 100);
-            int keynum = (int) (k % 100);
-            if (keynum % 2 == 0)
-            {
-                keynum = keynum / 2; // real keynum
-
- */

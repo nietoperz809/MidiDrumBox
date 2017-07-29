@@ -29,10 +29,11 @@ public class DesktopFrame extends JFrame
         setLayout(new BorderLayout());
 
         JMenuBar bar = new JMenuBar(); // create menu bar
-        JMenu addMenu = new JMenu("Single"); // create Add menu
-        JMenuItem newFrame = new JMenuItem("New");
-        JMenuItem load = new JMenuItem("Load"); // create Add menu
-        JMenuItem clone = new JMenuItem("Clone"); // create Add menu
+        JMenu actionMenu = new JMenu("Action"); // create Add menu
+        JMenuItem newFrame = new JMenuItem("New Drumbox");
+        JMenuItem load = new JMenuItem("Load Drumbox"); // create Add menu
+        JMenuItem clone = new JMenuItem("Clone selected Drumbox"); // create Add menu
+        JMenuItem delete = new JMenuItem("Delete all"); // create Add menu
 
         JMenu projMenu = new JMenu("Project"); // create Add menu
         JMenuItem pload = new JMenuItem("Load"); // create Add menu
@@ -44,11 +45,13 @@ public class DesktopFrame extends JFrame
 
         docMenu = new JMenu("Patterns"); // create Add menu
 
-        addMenu.add(newFrame); // add new frame item to Add menu
-        addMenu.add(load); // add new frame item to Add menu
-        addMenu.add(clone);
+        actionMenu.add(newFrame); // add new frame item to Add menu
+        actionMenu.add(load); // add new frame item to Add menu
+        actionMenu.add(clone);
+        actionMenu.add(new JSeparator());
+        actionMenu.add(delete);
 
-        bar.add(addMenu); // add Add menu to menu bar
+        bar.add(actionMenu); // add Add menu to menu bar
         bar.add(projMenu);
         bar.add(docMenu);
         setJMenuBar(bar); // set menu bar for this application
@@ -62,6 +65,23 @@ public class DesktopFrame extends JFrame
         newFrame.addActionListener(event -> newDrumbox());
         load.addActionListener(event -> loadDrumbox());
         clone.addActionListener(event -> cloneDrumbox());
+        delete.addActionListener(event -> deleteAll());
+    }
+
+    private void deleteAll()
+    {
+        String[] options = {"Yepp", "Nope"};
+        int dialogResult = JOptionPane.showOptionDialog(this,
+                "Delete everything?", "Warning",
+                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null,
+                options, options[1]);
+        if(dialogResult == JOptionPane.YES_OPTION)
+        {
+            docMenu.removeAll();
+            theDesktop.removeAll();
+            allBoxes.clear();
+            theDesktop.repaint();
+        }
     }
 
     /**
@@ -219,12 +239,25 @@ public class DesktopFrame extends JFrame
                 try
                 {
                     Sequence seq = createMidi(ar);
-                    MidiSystem.write(seq, 1, f);
-                    JOptionPane.showMessageDialog(this, "Saved to: " + f.getAbsolutePath(), "Drum Tool", JOptionPane.INFORMATION_MESSAGE);
+                    if (seq == null)
+                    {
+                        JOptionPane.showMessageDialog(this,
+                                "Nothing to do", "Drum Tool",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                    else
+                    {
+                        MidiSystem.write(seq, 1, f);
+                        JOptionPane.showMessageDialog(this,
+                                "Saved to: " + f.getAbsolutePath(),
+                                "Drum Tool", JOptionPane.INFORMATION_MESSAGE);
+                    }
                 }
                 catch (IOException e1)
                 {
-                    JOptionPane.showMessageDialog(this, "Saving fail: " + e1, "Drum Tool", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this,
+                            "Saving fail: " + e1,
+                            "Drum Tool", JOptionPane.ERROR_MESSAGE);
                 }
             }
             catch (Exception ex2)
@@ -245,6 +278,8 @@ public class DesktopFrame extends JFrame
      */
     private Sequence createMidi(ArrayList<Integer> ar)
     {
+        if (ar.isEmpty())
+            return null;
         try
         {
             Sequence s_out = new Sequence(0.0f, 960);

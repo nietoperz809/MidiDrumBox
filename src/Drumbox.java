@@ -92,7 +92,6 @@ public class Drumbox extends JPanel implements Serializable
     {
         DrumPanel panel = new DrumPanel(lineNumber, this);
         panel.setBorder(BorderFactory.createEmptyBorder());
-//        panel.setPreferredSize(new Dimension(32*20, 30));
 
         panel.setBackground(Color.BLACK);
         FlowLayout la = new FlowLayout(FlowLayout.LEFT, 0, 0);
@@ -158,14 +157,16 @@ public class Drumbox extends JPanel implements Serializable
         });
         panel.add(bminus);
 
-        speedSlider.setToolTipText("Track Speed");
         loopCount.setPreferredSize(new Dimension(100,20));
-        speedSlider.setMinimum(100);
+
+        speedSlider.setMinimum(50);
         speedSlider.setMaximum(1000);
         speedSlider.setMinorTickSpacing(25);
         speedSlider.setMajorTickSpacing(100);
         speedSlider.setPaintTicks(true);
         speedSlider.setSnapToTicks(true);
+        speedSlider.setToolTipText("Track Speed:" + speedSlider.getValue());
+        speedSlider.addChangeListener(e -> speedSlider.setToolTipText("Track Speed:" + speedSlider.getValue()));
 
         noteLengthSlider.setToolTipText("Event Length");
         loopCount.setPreferredSize(new Dimension(100,20));
@@ -282,7 +283,7 @@ public class Drumbox extends JPanel implements Serializable
      */
     private void getInstrument (JComboBox combo, AtomicInteger instrument)
     {
-        int i = readFirstTwo((String) combo.getSelectedItem());
+        int i = DrumKit.readFirstTwo((String) combo.getSelectedItem());
         instrument.set(i);
     }
 
@@ -459,15 +460,7 @@ public class Drumbox extends JPanel implements Serializable
         {
             for (int s = 0; s < 32; s++)
             {
-                JToggleButton b = p.toggleButtons.get(s);
-                if (s < val)
-                {
-                    b.setVisible(true);
-                }
-                else
-                {
-                    b.setVisible(false);
-                }
+                p.toggleButtons.get(s).setVisible(s < val);
             }
         }
         //mdiClient.pack();
@@ -481,32 +474,7 @@ public class Drumbox extends JPanel implements Serializable
      */
     private void setInstrument (JComboBox combo, int instrument)
     {
-        combo.setSelectedIndex(getInstrumentNameIndex(instrument));
-    }
-
-    public static int getInstrumentNameIndex (int instrument)
-    {
-        for (int s = 0; s < DrumKit.instrumentNames.length; s++)
-        {
-            if (readFirstTwo(DrumKit.instrumentNames[s]) == instrument)
-            {
-                return s;
-            }
-        }
-        System.out.println("wrong instrument");
-        return -1;
-    }
-
-    /**
-     * Read a number from beginning of string
-     *
-     * @param in String beginning with number
-     * @return The number
-     */
-    private static int readFirstTwo (String in)
-    {
-        String s = in.substring(0, 2);
-        return Integer.parseInt(s);
+        combo.setSelectedIndex(DrumKit.getInstrumentNameIndex(instrument));
     }
 
     /**
@@ -520,6 +488,9 @@ public class Drumbox extends JPanel implements Serializable
                 src.volSlider.getValue());
     }
 
+    /**
+     * Open a file select dialog before loading pattern 
+     */
     public void loadWithDialog ()
     {
         final JFileChooser fc = new JFileChooser();

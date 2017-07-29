@@ -1,6 +1,7 @@
-public interface DrumKit
+
+public class DrumKit
 {
-    String[] instrumentNames = new String[]
+    static final String[] instrumentNames = new String[]
             {
                     "27 High Q (GM2)",
                     "28 Slap (GM2)",
@@ -64,4 +65,34 @@ public interface DrumKit
                     "86 Mute Surdo (GM2)",
                     "87 Open Surdo (GM2)"
             };
+
+    /**
+     * Get idx into instrument array given instrument MIDI code
+     * @param instrument the MIDI number
+     * @return array index
+     */
+    public static int getInstrumentNameIndex (int instrument)
+    {
+        for (int s = 0; s < instrumentNames.length; s++)
+        {
+            if (readFirstTwo(instrumentNames[s]) == instrument)
+            {
+                return s;
+            }
+        }
+        System.out.println("wrong instrument");
+        return -1;
+    }
+
+    /**
+     * Read a number from beginning of string
+     *
+     * @param in String beginning with number
+     * @return The number
+     */
+    static int readFirstTwo (String in)
+    {
+        String s = in.substring(0, 2);
+        return Integer.parseInt(s);
+    }
 }
