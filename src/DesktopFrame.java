@@ -16,12 +16,17 @@ public class DesktopFrame extends JFrame
     private final JDesktopPane theDesktop;
     private final ArrayList<Drumbox> allBoxes = new ArrayList<>();
     private final JMenu docMenu;
-    private final static String title ="MIDI Drumbox";
+    private final static String title = "Drum Track Creator";
     private JTextField patternList;
     private Drumbox currentActiveBox;
-    private String currentProjectName = "";
+    private String currentProjectName = null;
     private JCheckBox notesOnly;
     private JSlider speedAdjust;
+    private String currentProjectPath = null;
+    private final FileNameExtensionFilter projectFilter = new FileNameExtensionFilter("Drum Project",
+            "dproj");
+    private final FileNameExtensionFilter midiFileFilter = new FileNameExtensionFilter("Midi Files",
+            "mid");
 
     // set up GUI
     private DesktopFrame ()
@@ -36,14 +41,18 @@ public class DesktopFrame extends JFrame
         JMenuItem load = new JMenuItem("Load Drumbox"); // create Add menu
         JMenuItem clone = new JMenuItem("Clone selected Drumbox"); // create Add menu
         JMenuItem delete = new JMenuItem("Delete all"); // create Add menu
+        JMenuItem deleteOne = new JMenuItem("Delete selected"); // create Add menu
 
         JMenu projMenu = new JMenu("Project"); // create Add menu
-        JMenuItem pload = new JMenuItem("Load"); // create Add menu
-        JMenuItem psave = new JMenuItem("Save"); // create Add menu
+        JMenuItem pload = new JMenuItem("Load ..."); // create Add menu
+        JMenuItem saveold = new JMenuItem("Save"); // create Add menu
+        JMenuItem psave = new JMenuItem("Save as ..."); // create Add menu
         projMenu.add(pload);
         projMenu.add(psave);
+        projMenu.add(saveold);
         pload.addActionListener(event -> loadProject());
         psave.addActionListener(event -> saveProject());
+        saveold.addActionListener(event -> saveCurrentProject());
 
         docMenu = new JMenu("Patterns"); // create Add menu
 
@@ -51,6 +60,7 @@ public class DesktopFrame extends JFrame
         actionMenu.add(load); // add new frame item to Add menu
         actionMenu.add(clone);
         actionMenu.add(new JSeparator());
+        actionMenu.add(deleteOne);
         actionMenu.add(delete);
 
         bar.add(actionMenu); // add Add menu to menu bar
@@ -68,6 +78,7 @@ public class DesktopFrame extends JFrame
         load.addActionListener(event -> loadDrumbox());
         clone.addActionListener(event -> cloneDrumbox());
         delete.addActionListener(event -> deleteAll());
+        deleteOne.addActionListener(event -> deleteOne());
     }
 
     private void deleteAll()
@@ -92,17 +103,13 @@ public class DesktopFrame extends JFrame
     private void loadProject()
     {
         final JFileChooser fc = new JFileChooser();
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("Drum Project",
-                "dproj");
-        fc.setFileFilter(filter);
+        fc.setFileFilter(projectFilter);
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
         {
             try
             {
-                String filename = fc.getSelectedFile().getCanonicalPath();
-                loadProject(filename);
-                currentProjectName = fc.getSelectedFile().getName();
-                setTitle(title + " -- " + currentProjectName);
+                String path = fc.getSelectedFile().getCanonicalPath();
+                loadProject(path);
             }
             catch (Exception e1)
             {
@@ -142,6 +149,18 @@ public class DesktopFrame extends JFrame
             }
         }
         r.close();
+        currentProjectPath = filename;
+        currentProjectName = filename;
+        setTitle(title + " -- " + currentProjectName);
+
+    }
+
+    private void saveCurrentProject()
+    {
+        if (currentProjectPath == null)
+            saveProject();
+        else
+            saveProject(currentProjectPath);
     }
 
     /**
@@ -153,6 +172,7 @@ public class DesktopFrame extends JFrame
         File f = new File("Drumproject#" +
                 "-" + System.currentTimeMillis() + ".dproj");
         fc.setSelectedFile(f);
+        fc.setFileFilter(projectFilter);
         if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION)
         {
             try
@@ -244,9 +264,7 @@ public class DesktopFrame extends JFrame
     private void saveMidi (ArrayList<Integer> ar)
     {
         final JFileChooser fc = new JFileChooser();
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("Midi Files",
-                "mid");
-        fc.setFileFilter(filter);
+        fc.setFileFilter(midiFileFilter);
         File f = new File("midifile_" +
                 System.currentTimeMillis() + ".mid");
         fc.setSelectedFile(f);
@@ -404,6 +422,23 @@ public class DesktopFrame extends JFrame
             System.out.println(ex);
         }
         return null;
+    }
+
+    private void deleteOne()
+    {
+        JInternalFrame f = currentActiveBox.getMdiClient();
+        for (int s=0; s<docMenu.getItemCount(); s++)
+        {
+            JMenuItem mi = docMenu.getItem(s);
+            if (mi.getText().equals(f.getTitle()))
+            {
+                docMenu.remove(s);
+                break;
+            }
+        }
+        theDesktop.remove(f);
+        allBoxes.remove(currentActiveBox);
+        theDesktop.repaint();
     }
 
     /**
