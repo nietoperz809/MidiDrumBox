@@ -245,9 +245,9 @@ public class Drumbox extends JPanel implements Serializable
             else
             {
                 b2.setIcon(iconStop);
-                Sequence sq = createMIDI();
                 try
                 {
+                    Sequence sq = createMIDI();
                     sequencer.addMetaEventListener(meta ->
                     {
                         if (meta.getType() == 47) // All played
@@ -535,31 +535,15 @@ public class Drumbox extends JPanel implements Serializable
      *
      * @return The sequence
      */
-    public Sequence createMIDI ()
+    public Sequence createMIDI () throws Exception
     {
-        Sequence seq;
-        try
-        {
-            seq = new Sequence(0.0f, 960);
-        }
-        catch (InvalidMidiDataException e)
-        {
-            return null;
-        }
+        Sequence seq = new Sequence(0.0f, 960);
         Track tr = seq.createTrack();
         // ---------------------------------
-            try
-            {
-                int kit= DrumKit.readNumber((String)drumKits.getSelectedItem());
-                ShortMessage prog = new ShortMessage(ShortMessage.PROGRAM_CHANGE,
+        int kit= DrumKit.readNumber((String)drumKits.getSelectedItem());
+        ShortMessage prog = new ShortMessage(ShortMessage.PROGRAM_CHANGE,
                         9, kit-1, 0);
-                MidiEvent evp = new MidiEvent(prog, 0);
-                tr.add(evp);
-            }
-            catch (InvalidMidiDataException e)
-            {
-                e.printStackTrace();
-            }
+        tr.add(new MidiEvent(prog, 0));
         //---------------------------------
         for (int s = 0; s < Integer.parseInt(loopCount.getText()); s++)
         {

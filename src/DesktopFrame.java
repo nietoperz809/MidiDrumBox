@@ -283,6 +283,7 @@ public class DesktopFrame extends JFrame
     {
         if (ar.isEmpty())
             return null;
+        int lastprogram = -1;
         try
         {
             Sequence s_out = new Sequence(0.0f, 960);
@@ -296,7 +297,20 @@ public class DesktopFrame extends JFrame
                 for (int s = 0; s < tr.size(); s++)
                 {
                     MidiEvent ev = tr.get(s);
-                    if (ev.getMessage().getStatus() == 255) // end of track
+                    MidiMessage ms = ev.getMessage();
+                    if (ms instanceof ShortMessage)
+                    {
+                        ShortMessage sm = (ShortMessage)ms;
+                        if (sm.getCommand() == ShortMessage.PROGRAM_CHANGE)
+                        {
+                            int prg = sm.getData1(); // skip multiple prg change to same prg
+                            if (prg == lastprogram)
+                                continue;
+                            lastprogram = prg;
+                        }
+                    }
+                    int status = ms.getStatus();
+                    if (status == 255) // end of track
                     {
                         continue;
                     }
