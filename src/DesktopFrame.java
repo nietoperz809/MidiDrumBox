@@ -20,6 +20,8 @@ public class DesktopFrame extends JFrame
     private JTextField patternList;
     private Drumbox currentActiveBox;
     private String currentProjectName = "";
+    private JCheckBox notesOnly;
+    private JSlider speedAdjust;
 
     // set up GUI
     private DesktopFrame ()
@@ -194,13 +196,27 @@ public class DesktopFrame extends JFrame
         p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
         p.setBorder (BorderFactory.createLineBorder(Color.BLACK));
 
-//        drumKits = new JComboBox<>(DrumKit.kitnames);
-//        p.add (drumKits);
-
         patternList = new JTextField();
+        patternList.setToolTipText("Enter Drumbox numbers separated by comma");
         patternList.setBackground(Color.white);
         patternList.setPreferredSize(new Dimension(500, 20));
         p.add(patternList);
+
+        speedAdjust = new JSlider();
+        speedAdjust.addChangeListener(e -> speedAdjust.setToolTipText("Speed Adjust: " + getMasterSpeedMultiplier()));
+        speedAdjust.setToolTipText("Speed Adjust: " + getMasterSpeedMultiplier());
+        speedAdjust.setMinimum(-10);
+        speedAdjust.setMaximum(10);
+        speedAdjust.setValue(0);
+        speedAdjust.setMinorTickSpacing(1);
+        speedAdjust.setMajorTickSpacing(2);
+        speedAdjust.setPaintTicks(true);
+        speedAdjust.setSnapToTicks(true);
+        p.add(speedAdjust);
+
+        notesOnly = new JCheckBox();
+        notesOnly.setToolTipText("Select this if MIDI file has only note events");
+        p.add (notesOnly);
 
         JButton butt = new JButton("Create MIDI");
         p.add(butt);
@@ -274,6 +290,14 @@ public class DesktopFrame extends JFrame
         }
     }
 
+    private float getMasterSpeedMultiplier()
+    {
+        float speedMult = (float)speedAdjust.getValue()/-3.0f;
+        if (speedMult < 0)
+            return -1.0f/speedMult;
+        return 1.0f + speedMult;
+    }
+
     /**
      * Create a midi file from all drum boxes and controlled
      * by an array of numbers
@@ -283,6 +307,7 @@ public class DesktopFrame extends JFrame
     {
         if (ar.isEmpty())
             return null;
+        float speedMult = getMasterSpeedMultiplier();
         int lastprogram = -1;
         try
         {
@@ -298,23 +323,25 @@ public class DesktopFrame extends JFrame
                 {
                     MidiEvent ev = tr.get(s);
                     MidiMessage ms = ev.getMessage();
-                    if (ms instanceof ShortMessage)
+                    if (!notesOnly.isSelected())
                     {
-                        ShortMessage sm = (ShortMessage)ms;
-                        if (sm.getCommand() == ShortMessage.PROGRAM_CHANGE)
+                        if (ms instanceof ShortMessage)
                         {
-                            int prg = sm.getData1(); // skip multiple prg change to same prg
-                            if (prg == lastprogram)
-                                continue;
-                            lastprogram = prg;
+                            ShortMessage sm = (ShortMessage) ms;
+                            if (sm.getCommand() == ShortMessage.PROGRAM_CHANGE)
+                            {
+                                int prg = sm.getData1(); // skip multiple prg change to same prg
+                                if (prg == lastprogram)
+                                    continue;
+                                lastprogram = prg;
+                            }
                         }
                     }
-                    int status = ms.getStatus();
-                    if (status == 255) // end of track
+                    if (ms.getStatus() == 255) // end of track
                     {
                         continue;
                     }
-                    ev.setTick(ev.getTick() + offset);
+                    ev.setTick((int)((ev.getTick() + offset)*speedMult));
                     t_out.add(ev);
                 }
                 offset += (tr.ticks() + box.getSpeedValue());
