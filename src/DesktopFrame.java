@@ -194,9 +194,12 @@ public class DesktopFrame extends JFrame
         p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
         p.setBorder (BorderFactory.createLineBorder(Color.BLACK));
 
+//        drumKits = new JComboBox<>(DrumKit.kitnames);
+//        p.add (drumKits);
+
         patternList = new JTextField();
         patternList.setBackground(Color.white);
-        patternList.setPreferredSize(new Dimension(600, 20));
+        patternList.setPreferredSize(new Dimension(500, 20));
         p.add(patternList);
 
         JButton butt = new JButton("Create MIDI");
@@ -284,7 +287,7 @@ public class DesktopFrame extends JFrame
         {
             Sequence s_out = new Sequence(0.0f, 960);
             Track t_out = s_out.createTrack();
-            long offset = 0;
+            long offset = 1;
             for (Integer i : ar)
             {
                 Drumbox box = allBoxes.get(i);

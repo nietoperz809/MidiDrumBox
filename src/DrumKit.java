@@ -1,6 +1,20 @@
 
 public class DrumKit
 {
+    static final String[] kitnames = new String[]
+            {
+                    "1  Standard Kit",
+                    "9  Room Kit",
+                    "17 Power Kit",
+                    "25 Electronic Kit",
+                    "26 TR-808 Kit",
+                    "33 Jazz Kit",
+                    "41 Brush Kit",
+                    "49 Orchestra Kit",
+                    "57 Sound FX Kit",
+                    "128 Percussion"
+            };
+
     static final String[] instrumentNames = new String[]
             {
                     "27 High Q (GM2)",
@@ -75,7 +89,7 @@ public class DrumKit
     {
         for (int s = 0; s < instrumentNames.length; s++)
         {
-            if (readFirstTwo(instrumentNames[s]) == instrument)
+            if (readNumber(instrumentNames[s]) == instrument)
             {
                 return s;
             }
@@ -90,9 +104,9 @@ public class DrumKit
      * @param in String beginning with number
      * @return The number
      */
-    static int readFirstTwo (String in)
+    public static int readNumber (String in)
     {
-        String s = in.substring(0, 2);
+        String s = in.substring(0, 3).trim();
         return Integer.parseInt(s);
     }
 }

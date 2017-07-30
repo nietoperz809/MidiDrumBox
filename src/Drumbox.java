@@ -24,8 +24,9 @@ public class Drumbox extends JPanel implements Serializable
     private final JSlider speedSlider = new JSlider();  // Speed for this pattern
     private final JTextField loopCount = new JTextField();
     private final DrumPanel[] drumPanels = new DrumPanel[LINES];
-    private HashMap<Long, SerMidEvent> noteMap = new HashMap<>();   // The event list
+    private HashMap<Long, SerMidEvent> eventMap = new HashMap<>();   // The event list
     private int drumSteps = 32; // Number of drumSteps
+    private JComboBox<String> drumKits;
 
     /**
      * Constructor: Build complete frame and show it
@@ -100,7 +101,7 @@ public class Drumbox extends JPanel implements Serializable
         AtomicInteger instrument = new AtomicInteger(-1);
 
         JComboBox<String> combo = new JComboBox<>(DrumKit.instrumentNames);
-        combo.setSelectedIndex(lineNumber);
+        combo.setSelectedIndex(lineNumber+8); // begin with base drum
         getInstrument(combo, instrument);
         combo.addActionListener(e ->
         {
@@ -157,7 +158,8 @@ public class Drumbox extends JPanel implements Serializable
         });
         panel.add(bminus);
 
-        loopCount.setPreferredSize(new Dimension(100,20));
+        drumKits = new JComboBox<>(DrumKit.kitnames);
+        panel.add (drumKits);
 
         speedSlider.setMinimum(50);
         speedSlider.setMaximum(1000);
@@ -187,7 +189,7 @@ public class Drumbox extends JPanel implements Serializable
         volSlider.setSnapToTicks(true);
         volSlider.setValue(127);
 
-        loopCount.setSize(5,20);
+        loopCount.setPreferredSize(new Dimension(20,20));
         loopCount.setToolTipText("Loop Count");
         loopCount.setText("1");
 
@@ -283,7 +285,7 @@ public class Drumbox extends JPanel implements Serializable
      */
     private void getInstrument (JComboBox combo, AtomicInteger instrument)
     {
-        int i = DrumKit.readFirstTwo((String) combo.getSelectedItem());
+        int i = DrumKit.readNumber((String) combo.getSelectedItem());
         instrument.set(i);
     }
 
@@ -353,16 +355,37 @@ public class Drumbox extends JPanel implements Serializable
      * 3. Loop value
      * 4. drum steps (size of line)
      * 5. note Length
+     * 6. Volume
+     * 7. Drum kit
      */
     public void savePattern (ObjectWriter w)
     {
-        w.putObject(noteMap);
+        w.putObject(eventMap);
         w.putObject(speedSlider.getValue());
         w.putObject(loopCount.getText());
         w.putObject(drumSteps);
         w.putObject(noteLengthSlider.getValue());
         w.putObject(volSlider.getValue());
+        w.putObject(drumKits.getSelectedIndex());
     }
+
+    /**
+     * Loads one pattern from disk and initializes the drumbox
+     *
+     * @throws Exception if smth gone wrong
+     */
+    private void loadPattern (ObjectReader r) throws Exception
+    {
+        loadPattern
+                ((HashMap<Long, SerMidEvent>) r.getObject(),
+                        (Integer) r.getObject(), // speed
+                        (String) r.getObject(),  // loop count
+                        (Integer) r.getObject(), // no of steps
+                        (Integer) r.getObject(), // note length
+                        (Integer)r.getObject(),  // volume
+                        (Integer)r.getObject()); // drumkits
+    }
+
 
     /**
      * Initialize this Drumbox from an objectreader
@@ -384,22 +407,6 @@ public class Drumbox extends JPanel implements Serializable
     }
 
     /**
-     * Loads one pattern from disk and initializes the drumbox
-     *
-     * @throws Exception if smth gone wrong
-     */
-    private void loadPattern (ObjectReader r) throws Exception
-    {
-        loadPattern
-                ((HashMap<Long, SerMidEvent>) r.getObject(),
-                        (Integer) r.getObject(),
-                        (String) r.getObject(),
-                        (Integer) r.getObject(),
-                        (Integer) r.getObject(),
-                        (Integer)r.getObject());
-    }
-
-    /**
      * Loads a pattern given by variables
      * @param eventHashMap Hashmap containing the events
      * @param speedSliderValue speed slider value
@@ -409,27 +416,28 @@ public class Drumbox extends JPanel implements Serializable
      */
     private void loadPattern (HashMap<Long, SerMidEvent> eventHashMap, int speedSliderValue,
                               String loopCounterString, int steps, int eventLength,
-                              int eventVolume)
+                              int eventVolume, int drumset)
     {
         speedSlider.setValue(speedSliderValue);
         loopCount.setText(loopCounterString);
         drumSteps = steps;
         noteLengthSlider.setValue(eventLength);
         volSlider.setValue(eventVolume);
+        drumKits.setSelectedIndex(drumset);
         adjustDrumLineLength(drumSteps);
         // switch buttons off
 //        for (DrumPanel p : drumPanels)
 //        {
 //            p.clearButton.doClick();
 //        }
-        noteMap = eventHashMap;
-        for (Long k : noteMap.keySet())
+        eventMap = eventHashMap;
+        for (Long k : eventMap.keySet())
         {
             int linenum = EventIdPair.getRowNumber(k);
             int keynum = EventIdPair.getColumnNumber(k);
             if (EventIdPair.isKeyOnEvent(k)) // get instrument from keyon event
             {
-                SerMidEvent ev = noteMap.get(k); // get the event
+                SerMidEvent ev = eventMap.get(k); // get the event
                 int instrument = ((SerShortMessage) ev.getMessage()).getData1();
                 int volume = ((SerShortMessage) ev.getMessage()).getData2();
                 DrumPanel panel = drumPanels[linenum];
@@ -483,9 +491,9 @@ public class Drumbox extends JPanel implements Serializable
      */
     public void cloneBox (Drumbox src)
     {
-        loadPattern((HashMap<Long, SerMidEvent>)src.noteMap.clone(), src.speedSlider.getValue(),
+        loadPattern((HashMap<Long, SerMidEvent>)src.eventMap.clone(), src.speedSlider.getValue(),
                     src.loopCount.getText(), src.drumSteps, src.noteLengthSlider.getValue(),
-                src.volSlider.getValue());
+                src.volSlider.getValue(), src.drumKits.getSelectedIndex());
     }
 
     /**
@@ -539,9 +547,23 @@ public class Drumbox extends JPanel implements Serializable
             return null;
         }
         Track tr = seq.createTrack();
+        // ---------------------------------
+            try
+            {
+                int kit= DrumKit.readNumber((String)drumKits.getSelectedItem());
+                ShortMessage prog = new ShortMessage(ShortMessage.PROGRAM_CHANGE,
+                        9, kit-1, 0);
+                MidiEvent evp = new MidiEvent(prog, 0);
+                tr.add(evp);
+            }
+            catch (InvalidMidiDataException e)
+            {
+                e.printStackTrace();
+            }
+        //---------------------------------
         for (int s = 0; s < Integer.parseInt(loopCount.getText()); s++)
         {
-            for (Map.Entry<Long, SerMidEvent> e : noteMap.entrySet())
+            for (Map.Entry<Long, SerMidEvent> e : eventMap.entrySet())
             {
                 SerMidEvent ev = e.getValue();
                 SerShortMessage msg = (SerShortMessage) ev.getMessage();
@@ -570,7 +592,7 @@ public class Drumbox extends JPanel implements Serializable
     private void putEvent (long key, SerMidEvent ev)
     {
         System.out.println("put: " + key);
-        noteMap.put(key, ev);
+        eventMap.put(key, ev);
     }
 
     /**
@@ -580,7 +602,7 @@ public class Drumbox extends JPanel implements Serializable
      */
     private void deleteEvent (long key)
     {
-        SerMidEvent e1 = noteMap.remove(key);
+        SerMidEvent e1 = eventMap.remove(key);
         if (e1 != null)
         {
             System.out.println("del: " + key);
