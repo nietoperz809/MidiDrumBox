@@ -30,6 +30,8 @@ public class Drumbox extends JPanel implements Serializable
     private int drumSteps = 32; // Number of drumSteps
     private JComboBox<String> drumKits;
 
+    private static RealtimePlayer rp = new RealtimePlayer();
+
     /**
      * Constructor: Build complete frame and show it
      *
@@ -163,6 +165,11 @@ public class Drumbox extends JPanel implements Serializable
         panel.add(bminus);
 
         drumKits = new JComboBox<>(DrumKit.kitnames);
+        drumKits.addActionListener(e ->
+        {
+            int kit = DrumKit.readNumber((String) drumKits.getSelectedItem());
+            //rp.setInstrument(kit);
+        });
         panel.add(drumKits);
 
         speedSlider.setMinimum(50);
@@ -324,6 +331,7 @@ public class Drumbox extends JPanel implements Serializable
                 try
                 {
                     int instr = instrument.get();
+                    rp.play(instr);
                     SerShortMessage on = new SerShortMessage(ShortMessage.NOTE_ON,
                             9, instr, volSlider.getValue());
                     SerShortMessage off = new SerShortMessage(ShortMessage.NOTE_OFF,

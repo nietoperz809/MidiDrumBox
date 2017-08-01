@@ -6,6 +6,8 @@ import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
@@ -27,11 +29,19 @@ public class DesktopFrame extends JFrame
             "dproj");
     private final FileNameExtensionFilter midiFileFilter = new FileNameExtensionFilter("Midi Files",
             "mid");
-
     // set up GUI
     private DesktopFrame ()
     {
         super(title);
+
+        this.addWindowListener(new WindowAdapter()
+        {
+            @Override
+            public void windowClosing (WindowEvent e)
+            {
+                System.exit(0);
+            }
+        });
 
         setLayout(new BorderLayout());
 
@@ -474,7 +484,6 @@ public class DesktopFrame extends JFrame
     public static void main (String args[]) throws Exception
     {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
-        //UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
         SwingUtilities.invokeLater(() ->
         {
             UIManager.put("ToggleButton.select", Color.RED);
