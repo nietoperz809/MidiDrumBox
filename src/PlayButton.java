@@ -4,13 +4,20 @@ import javax.sound.midi.Sequencer;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Play control button to play midi sequence
+ */
 public class PlayButton extends JToggleButton
 {
     private static final ImageIcon iconPlay = new ImageIcon(Helper.loadImageFromResource("play.png"));
     private static final ImageIcon iconStop = new ImageIcon(Helper.loadImageFromResource("stop.png"));
-    private Sequencer sequencer;
-    private SequenceProvider sprov;
+    private static Sequencer sequencer;
+    private final SequenceProvider sprov;
 
+    /**
+     * Contsructor
+     * @param s_provider Caller-supplied interface where midi data can be fetched
+     */
     public PlayButton (SequenceProvider s_provider)
     {
         super();
@@ -32,7 +39,8 @@ public class PlayButton extends JToggleButton
 
         try
         {
-            sequencer = MidiSystem.getSequencer();
+            if (sequencer == null)
+                sequencer = MidiSystem.getSequencer();
         }
         catch (Exception e)
         {
@@ -40,6 +48,9 @@ public class PlayButton extends JToggleButton
         }
     }
 
+    /**
+     * Start/Stop playback of sequence
+     */
     private void playButtonClicked ()
     {
         if (sequencer.isRunning())
@@ -70,6 +81,10 @@ public class PlayButton extends JToggleButton
         }
     }
 
+    /**
+     * Set Icon regarding to button state
+     * @param b true == isSelected
+     */
     public void setSelected (boolean b)
     {
         super.setSelected(b);

@@ -1,7 +1,7 @@
 
 public class DrumKit
 {
-    static final String[] kitnames = new String[]
+    static final String[] drumKitNames = new String[]
             {
                     "1  Standard Kit",
                     "9  Room Kit",

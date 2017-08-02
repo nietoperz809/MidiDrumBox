@@ -31,8 +31,8 @@ class EventIdPair
 
     /**
      * Get Column number from Event ID
-     * @param e
-     * @return
+     * @param e Event ID
+     * @return Col Number
      */
     public static int getColumnNumber (long e)
     {

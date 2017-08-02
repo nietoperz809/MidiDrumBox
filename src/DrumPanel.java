@@ -7,7 +7,7 @@ class DrumPanel extends JPanel
     final ArrayList<JToggleButton> toggleButtons = new ArrayList<>();
     private final int linenumber;
     JComboBox combo;
-    private Drumbox drumbox;
+    private final Drumbox drumbox;
 
     DrumPanel (int line, Drumbox parent)
     {

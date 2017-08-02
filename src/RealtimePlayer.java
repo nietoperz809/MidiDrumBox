@@ -9,9 +9,8 @@ import javax.sound.midi.*;
 
 public class RealtimePlayer
 {
-    private AudioSynthesizer synthesizer;
-    private Instrument instruments[];
-    private MidiChannel cc;
+    // --Commented out by Inspection (8/2/2017 9:20 PM):private Instrument instruments[];
+    // --Commented out by Inspection (8/2/2017 9:20 PM):private MidiChannel cc;
     private final ShortMessage msg = new ShortMessage();
     private Receiver receiver = null;
 
@@ -19,8 +18,8 @@ public class RealtimePlayer
     {
         try
         {
-            synthesizer = (AudioSynthesizer) MidiSystem.getSynthesizer();
-            instruments = synthesizer.getDefaultSoundbank().getInstruments();
+            AudioSynthesizer synthesizer = (AudioSynthesizer) MidiSystem.getSynthesizer();
+            //instruments = synthesizer.getDefaultSoundbank().getInstruments();
             receiver = synthesizer.getReceiver();
             synthesizer.open();
         }
@@ -32,13 +31,13 @@ public class RealtimePlayer
 
     public void setInstrument(int instr)
     {
-        instr--;
-        Instrument in = instruments[instr];
-        synthesizer.loadInstrument(in);
+//        instr--;
+//        Instrument in = instruments[instr];
+//        synthesizer.loadInstrument(in);
         try
         {
             msg.setMessage(ShortMessage.PROGRAM_CHANGE, 9,
-                    in.getPatch().getProgram(), in.getPatch().getBank());
+                    instr-1, 0);
             receiver.send (msg, 0);
         }
         catch (InvalidMidiDataException e)

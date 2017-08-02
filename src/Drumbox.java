@@ -17,7 +17,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
     private static int instanceNumber = 0;
     private final JSlider noteLengthSlider = new JSlider();
     private final JSlider volSlider = new JSlider();
-    private final Sequencer sequencer;
+   // private final Sequencer sequencer;
     private final JInternalFrame mdiClient;
     private final JSlider speedSlider = new JSlider();  // Speed for this pattern
     private final JTextField loopCount = new JTextField();
@@ -28,19 +28,19 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
     private int drumSteps = 32; // Number of drumSteps
     private JComboBox<String> drumKits;
 
-    private static RealtimePlayer rp = new RealtimePlayer();
+    private static final RealtimePlayer directPlayer = new RealtimePlayer();
 
     /**
      * Constructor: Build complete frame and show it
      *
      * @throws Exception If smth. gone wrong
      */
-    public Drumbox (JInternalFrame frame) throws Exception
+    public Drumbox (JInternalFrame frame)
     {
         mdiClient = frame;
         GridLayout gl = new GridLayout(LINES + 1, 1, 0, 0);
         this.setLayout(gl);
-        sequencer = MidiSystem.getSequencer();
+        //sequencer = MidiSystem.getSequencer();
         for (int s = 0; s < LINES; s++)
         {
             drumPanels[s] = makeDrumLinePanel(s);
@@ -162,11 +162,11 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
         });
         panel.add(bminus);
 
-        drumKits = new JComboBox<>(DrumKit.kitnames);
+        drumKits = new JComboBox<>(DrumKit.drumKitNames);
         drumKits.addActionListener(e ->
         {
             int kit = DrumKit.readNumber((String) drumKits.getSelectedItem());
-            rp.setInstrument(kit);
+            directPlayer.setInstrument(kit);
         });
         panel.add(drumKits);
 
@@ -228,35 +228,6 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
         return panel;
     }
 
-//    private void playButtonClicked (JToggleButton b2)
-//    {
-//        if (sequencer.isRunning())
-//        {
-//            sequencer.stop();
-//        }
-//        else
-//        {
-//            try
-//            {
-//                Sequence sq = createMIDI();
-//                sequencer.addMetaEventListener(meta ->
-//                {
-//                    if (meta.getType() == 47) // end of track
-//                    {
-//                        b2.setSelected(false);
-//                    }
-//                });
-//                sequencer.open();
-//                sequencer.setSequence(sq);
-//                Thread.sleep(100);
-//                sequencer.start();
-//            }
-//            catch (Exception ex)
-//            {
-//                System.out.println(ex);
-//            }
-//        }
-//    }
 
     /**
      * Save button clicked
@@ -323,7 +294,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
                 try
                 {
                     int instr = instrument.get();
-                    rp.play(instr);
+                    directPlayer.play(instr);
                     SerShortMessage on = new SerShortMessage(ShortMessage.NOTE_ON,
                             9, instr, volSlider.getValue());
                     SerShortMessage off = new SerShortMessage(ShortMessage.NOTE_OFF,
@@ -353,7 +324,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
      * @param fname file name
      * @throws Exception any failure
      */
-    private void savePattern (String fname) throws Exception
+    private void savePattern (String fname)
     {
         ObjectWriter w = new ObjectWriter(fname);
         savePattern(w);
@@ -406,7 +377,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
      *
      * @throws Exception if smth gone wrong
      */
-    private void loadPattern (ObjectReader r) throws Exception
+    private void loadPattern (ObjectReader r)
     {
         loadPattern
                 ((HashMap<Long, SerMidEvent>) r.getObject(),
@@ -555,8 +526,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
             Track tr = seq.createTrack();
             // ---------------------------------
             int kit = DrumKit.readNumber((String) drumKits.getSelectedItem());
-            ShortMessage prog = null;
-            prog = new ShortMessage(ShortMessage.PROGRAM_CHANGE,
+            ShortMessage prog = new ShortMessage(ShortMessage.PROGRAM_CHANGE,
                     9, kit - 1, 0);
             tr.add(new MidiEvent(prog, 0));
             //---------------------------------

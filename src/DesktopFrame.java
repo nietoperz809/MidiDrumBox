@@ -143,7 +143,10 @@ public class DesktopFrame extends JFrame implements SequenceProvider
         patternList.setText((String)r.getObject());
         for (; ; )
         {
+            //long t = System.currentTimeMillis();
             Drumbox box = newDrumbox();
+            //t = System.currentTimeMillis()-t;
+            //System.out.println("creaeDB: "+t);
             if (box == null)
             {
                 System.out.println("Drumbox creation fail");
@@ -332,6 +335,10 @@ public class DesktopFrame extends JFrame implements SequenceProvider
         return 1.0f + speedMult;
     }
 
+    /**
+     * Interface für Play Button to create MIDI Sequence
+     * @return Sequence that can be played or saved
+     */
     @Override
     public Sequence createMIDI ()
     {
