@@ -168,7 +168,7 @@ public class Drumbox extends JPanel implements Serializable
         drumKits.addActionListener(e ->
         {
             int kit = DrumKit.readNumber((String) drumKits.getSelectedItem());
-            //rp.setInstrument(kit);
+            rp.setInstrument(kit);
         });
         panel.add(drumKits);
 

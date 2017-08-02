@@ -9,11 +9,9 @@ import javax.sound.midi.*;
 
 public class RealtimePlayer
 {
-    AudioSynthesizer synthesizer;
-    Sequencer sequencer;
-    Sequence sequence;
-    Instrument instruments[];
-    MidiChannel cc;
+    private AudioSynthesizer synthesizer;
+    private Instrument instruments[];
+    private MidiChannel cc;
     private final ShortMessage msg = new ShortMessage();
     private Receiver receiver = null;
 
@@ -22,6 +20,7 @@ public class RealtimePlayer
         try
         {
             synthesizer = (AudioSynthesizer) MidiSystem.getSynthesizer();
+            instruments = synthesizer.getDefaultSoundbank().getInstruments();
             receiver = synthesizer.getReceiver();
             synthesizer.open();
         }
@@ -29,39 +28,6 @@ public class RealtimePlayer
         {
             System.out.println(e);
         }
-
-//
-//        try
-//        {
-//            if (synthesizer == null)
-//            {
-//                if ((synthesizer = MidiSystem.getSynthesizer()) == null)
-//                {
-//                    System.out.println("getSynthesizer() failed!");
-//                    return;
-//                }
-//            }
-//            recv = synthesizer.getReceiver();
-//            synthesizer.open();
-//            sequencer = MidiSystem.getSequencer();
-//            sequence = new Sequence(Sequence.PPQ, 940);
-//        }
-//        catch (Exception ex)
-//        {
-//            ex.printStackTrace();
-//            return;
-//        }
-//
-//        Soundbank sb = synthesizer.getDefaultSoundbank();
-//        if (sb != null)
-//        {
-//            instruments = synthesizer.getDefaultSoundbank().getInstruments();
-//            synthesizer.loadInstrument(instruments[0]);
-//        }
-//        MidiChannel midiChannels[] = synthesizer.getChannels();
-//        cc = midiChannels[9];
-//        cc.setMono(true);
-//        cc.setSolo(true);
     }
 
     public void setInstrument(int instr)
@@ -69,7 +35,16 @@ public class RealtimePlayer
         instr--;
         Instrument in = instruments[instr];
         synthesizer.loadInstrument(in);
-        cc.programChange(in.getPatch().getBank(), in.getPatch().getProgram());
+        try
+        {
+            msg.setMessage(ShortMessage.PROGRAM_CHANGE, 9,
+                    in.getPatch().getProgram(), in.getPatch().getBank());
+            receiver.send (msg, 0);
+        }
+        catch (InvalidMidiDataException e)
+        {
+            System.out.println(e);
+        }
     }
 
     public void play(int note)
@@ -85,16 +60,5 @@ public class RealtimePlayer
         {
             System.out.println(e);
         }
-
-//        cc.noteOn(note, 127);
-//        try
-//        {
-//            Thread.sleep(50);
-//        }
-//        catch (InterruptedException e)
-//        {
-//            System.out.println(e);
-//        }
-//        cc.noteOff(note);
     }
 }
