@@ -13,7 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class DesktopFrame extends JFrame
+public class DesktopFrame extends JFrame implements SequenceProvider
 {
     private final JDesktopPane theDesktop;
     private final ArrayList<Drumbox> allBoxes = new ArrayList<>();
@@ -250,25 +250,31 @@ public class DesktopFrame extends JFrame
 
         JButton butt = new JButton("Create MIDI");
         p.add(butt);
-        butt.addActionListener(e ->
-        {
-            String str = patternList.getText().replaceAll("\\s+", "");
-            String[] nums = str.split(",");
-            ArrayList<Integer> ar = new ArrayList<>();
-            for (String s : nums)
-            {
-                try
-                {
-                    ar.add (Integer.parseInt(s));
-                }
-                catch (Exception ignored)
-                {
+        butt.addActionListener(e -> saveMidi(getArrangement()));
 
-                }
-            }
-            saveMidi(ar);
-        });
+        PlayButton butt2 = new PlayButton(this);
+        butt2.setToolTipText("Play/Stop whole Arrangement");
+        p.add(butt2);
         return p;
+    }
+
+    private ArrayList<Integer> getArrangement()
+    {
+        String str = patternList.getText().replaceAll("\\s+", "");
+        String[] nums = str.split(",");
+        ArrayList<Integer> ar = new ArrayList<>();
+        for (String s : nums)
+        {
+            try
+            {
+                ar.add (Integer.parseInt(s));
+            }
+            catch (Exception ignored)
+            {
+
+            }
+        }
+        return ar;
     }
 
     private void saveMidi (ArrayList<Integer> ar)
@@ -324,6 +330,12 @@ public class DesktopFrame extends JFrame
         if (speedMult < 0)
             return -1.0f/speedMult;
         return 1.0f + speedMult;
+    }
+
+    @Override
+    public Sequence createMIDI ()
+    {
+        return createMidi(getArrangement());
     }
 
     /**
@@ -493,5 +505,6 @@ public class DesktopFrame extends JFrame
             desktopFrame.setVisible(true); // display frame
         });
     } // end main
+
 } // end class DesktopFrame
 

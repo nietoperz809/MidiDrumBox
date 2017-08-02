@@ -11,10 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Drumbox extends JPanel implements Serializable
+public class Drumbox extends JPanel implements Serializable, SequenceProvider
 {
-    private static final ImageIcon iconPlay = new ImageIcon(Helper.loadImageFromResource("play.png"));
-    private static final ImageIcon iconStop = new ImageIcon(Helper.loadImageFromResource("stop.png"));
     private static final int LINES = 10;
     private static int instanceNumber = 0;
     private final JSlider noteLengthSlider = new JSlider();
@@ -217,13 +215,10 @@ public class Drumbox extends JPanel implements Serializable
         bload.addActionListener(e ->
                 loadWithDialog());
 
-        JToggleButton b2 = new JToggleButton();
-        b2.setMargin(new Insets(1, 1, 1, 1));
-        b2.setToolTipText("Play/Stop pattern");
-        b2.setPressedIcon(iconStop);
-        b2.setIcon(iconPlay);
+        JToggleButton b2 = new PlayButton(this);
+        b2.setToolTipText("Play/Stop Pattern");
         panel.add(b2);
-        b2.addActionListener(e -> playButtonClicked(b2));
+        //b2.addActionListener(e -> playButtonClicked(b2));
         panel.add(speedSlider);
         panel.add(noteLengthSlider);
         panel.add(volSlider);
@@ -233,38 +228,35 @@ public class Drumbox extends JPanel implements Serializable
         return panel;
     }
 
-    private void playButtonClicked (JToggleButton b2)
-    {
-        if (sequencer.isRunning())
-        {
-            sequencer.stop();
-            b2.setIcon(iconPlay);
-        }
-        else
-        {
-            b2.setIcon(iconStop);
-            try
-            {
-                Sequence sq = createMIDI();
-                sequencer.addMetaEventListener(meta ->
-                {
-                    if (meta.getType() == 47) // All played
-                    {
-                        b2.setIcon(iconPlay);
-                        b2.setSelected(false);
-                    }
-                });
-                sequencer.open();
-                sequencer.setSequence(sq);
-                Thread.sleep(100);
-                sequencer.start();
-            }
-            catch (Exception ex)
-            {
-                System.out.println(ex);
-            }
-        }
-    }
+//    private void playButtonClicked (JToggleButton b2)
+//    {
+//        if (sequencer.isRunning())
+//        {
+//            sequencer.stop();
+//        }
+//        else
+//        {
+//            try
+//            {
+//                Sequence sq = createMIDI();
+//                sequencer.addMetaEventListener(meta ->
+//                {
+//                    if (meta.getType() == 47) // end of track
+//                    {
+//                        b2.setSelected(false);
+//                    }
+//                });
+//                sequencer.open();
+//                sequencer.setSequence(sq);
+//                Thread.sleep(100);
+//                sequencer.start();
+//            }
+//            catch (Exception ex)
+//            {
+//                System.out.println(ex);
+//            }
+//        }
+//    }
 
     /**
      * Save button clicked
@@ -555,36 +547,45 @@ public class Drumbox extends JPanel implements Serializable
      *
      * @return The sequence
      */
-    public Sequence createMIDI () throws Exception
+    public Sequence createMIDI ()
     {
-        Sequence seq = new Sequence(0.0f, 960);
-        Track tr = seq.createTrack();
-        // ---------------------------------
-        int kit = DrumKit.readNumber((String) drumKits.getSelectedItem());
-        ShortMessage prog = new ShortMessage(ShortMessage.PROGRAM_CHANGE,
-                9, kit - 1, 0);
-        tr.add(new MidiEvent(prog, 0));
-        //---------------------------------
-        for (int s = 0; s < Integer.parseInt(loopCount.getText()); s++)
+        try
         {
-            for (Map.Entry<Long, SerMidEvent> e : eventMap.entrySet())
+            Sequence seq = new Sequence(0.0f, 960);
+            Track tr = seq.createTrack();
+            // ---------------------------------
+            int kit = DrumKit.readNumber((String) drumKits.getSelectedItem());
+            ShortMessage prog = null;
+            prog = new ShortMessage(ShortMessage.PROGRAM_CHANGE,
+                    9, kit - 1, 0);
+            tr.add(new MidiEvent(prog, 0));
+            //---------------------------------
+            for (int s = 0; s < Integer.parseInt(loopCount.getText()); s++)
             {
-                SerMidEvent ev = e.getValue();
-                SerShortMessage msg = (SerShortMessage) ev.getMessage();
-                MidiEvent clone = new MidiEvent(msg.toShortMessage(), 0);
-                long tick = (ev.getTick() + s * drumSteps) * speedSlider.getValue();
-                if (msg.getCommand() == ShortMessage.NOTE_ON)
+                for (Map.Entry<Long, SerMidEvent> e : eventMap.entrySet())
                 {
-                    clone.setTick(tick);
+                    SerMidEvent ev = e.getValue();
+                    SerShortMessage msg = (SerShortMessage) ev.getMessage();
+                    MidiEvent clone = new MidiEvent(msg.toShortMessage(), 0);
+                    long tick = (ev.getTick() + s * drumSteps) * speedSlider.getValue();
+                    if (msg.getCommand() == ShortMessage.NOTE_ON)
+                    {
+                        clone.setTick(tick);
+                    }
+                    else
+                    {
+                        clone.setTick(tick + noteLengthSlider.getValue());
+                    }
+                    tr.add(clone);
                 }
-                else
-                {
-                    clone.setTick(tick + noteLengthSlider.getValue());
-                }
-                tr.add(clone);
             }
+            return seq;
         }
-        return seq;
+        catch (InvalidMidiDataException e)
+        {
+            System.out.println(e);
+            return null;
+        }
     }
 
     /**

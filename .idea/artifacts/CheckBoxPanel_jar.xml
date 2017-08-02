@@ -3,6 +3,7 @@
     <output-path>$PROJECT_DIR$/</output-path>
     <root id="archive" name="CheckBoxPanel.jar">
       <element id="module-output" name="CheckBoxPanel" />
+      <element id="file-copy" path="$PROJECT_DIR$/lib/jsasio_1.1.dll" />
     </root>
   </artifact>
 </component>
