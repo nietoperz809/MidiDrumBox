@@ -268,13 +268,20 @@ public class DesktopFrame extends JFrame implements SequenceProvider
         ArrayList<Integer> ar = new ArrayList<>();
         for (String s : nums)
         {
-            try
+            String[] add = s.split("\\+");
+            if (add.length > 1)
             {
-                ar.add (Integer.parseInt(s));
+                for (int n=0; n<add.length; n++)
+                {
+                    int i = Integer.parseInt(add[n]);
+                    if (n<(add.length-1))
+                        i = i+1000;
+                    ar.add(i);
+                }
             }
-            catch (Exception ignored)
+            else
             {
-
+                ar.add(Integer.parseInt(s));
             }
         }
         return ar;
@@ -363,6 +370,12 @@ public class DesktopFrame extends JFrame implements SequenceProvider
             long offset = 1;
             for (Integer i : ar)
             {
+                boolean add = false;
+                if(i>=1000)
+                {
+                    i = i-1000;
+                    add = true;
+                }
                 Drumbox box = allBoxes.get(i);
                 Sequence seq = box.createMIDI();
                 Track tr = seq.getTracks()[0];
@@ -391,7 +404,10 @@ public class DesktopFrame extends JFrame implements SequenceProvider
                     ev.setTick((int)((ev.getTick() + offset)*speedMult));
                     t_out.add(ev);
                 }
-                offset += (tr.ticks() + box.getSpeedValue());
+                if (!add)
+                {
+                    offset += (tr.ticks() + box.getSpeedValue());
+                }
             }
             return s_out;
         }
