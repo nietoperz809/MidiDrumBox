@@ -177,7 +177,8 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
         speedSlider.setPaintTicks(true);
         speedSlider.setSnapToTicks(true);
         speedSlider.setToolTipText("Track Speed:" + speedSlider.getValue());
-        speedSlider.addChangeListener(e -> speedSlider.setToolTipText("Track Speed:" + speedSlider.getValue()));
+        speedSlider.addChangeListener(e ->
+                Helper.showToolTip(speedSlider, "Speed"));
 
         noteLengthSlider.setToolTipText("Event Length");
         loopCount.setPreferredSize(new Dimension(100, 20));
@@ -187,9 +188,10 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
         noteLengthSlider.setMajorTickSpacing(100);
         noteLengthSlider.setPaintTicks(true);
         noteLengthSlider.setSnapToTicks(true);
+        noteLengthSlider.addChangeListener(e ->
+                Helper.showToolTip(noteLengthSlider, "Note Length"));
 
         volSlider.setToolTipText("Event Volume");
-        loopCount.setPreferredSize(new Dimension(100, 20));
         volSlider.setMinimum(0);
         volSlider.setMaximum(127);
         volSlider.setMinorTickSpacing(4);
@@ -197,6 +199,8 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
         volSlider.setPaintTicks(true);
         volSlider.setSnapToTicks(true);
         volSlider.setValue(127);
+        volSlider.addChangeListener(e ->
+                Helper.showToolTip(volSlider, "Volume"));
 
         loopCount.setPreferredSize(new Dimension(20, 20));
         loopCount.setToolTipText("Loop Count");

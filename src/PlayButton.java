@@ -77,6 +77,7 @@ public class PlayButton extends JToggleButton
             catch (Exception ex)
             {
                 System.out.println(ex);
+                setSelected(false);
             }
         }
     }

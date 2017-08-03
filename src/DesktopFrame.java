@@ -236,15 +236,16 @@ public class DesktopFrame extends JFrame implements SequenceProvider
         p.add(patternList);
 
         speedAdjust = new JSlider();
-        speedAdjust.addChangeListener(e -> speedAdjust.setToolTipText("Speed Adjust: " + getMasterSpeedMultiplier()));
-        speedAdjust.setToolTipText("Speed Adjust: " + getMasterSpeedMultiplier());
-        speedAdjust.setMinimum(-10);
-        speedAdjust.setMaximum(10);
-        speedAdjust.setValue(0);
+        speedAdjust.setMinimum(0);
+        speedAdjust.setMaximum(19);
+        speedAdjust.setValue(9);
+        speedAdjust.setToolTipText("Speed Adjust: " + getMasterSpeedDivider());
         speedAdjust.setMinorTickSpacing(1);
         speedAdjust.setMajorTickSpacing(2);
         speedAdjust.setPaintTicks(true);
         speedAdjust.setSnapToTicks(true);
+        speedAdjust.addChangeListener(e ->
+                Helper.showToolTip(speedAdjust, "Speed", this::getMasterSpeedDivider));
         p.add(speedAdjust);
 
         notesOnly = new JCheckBox();
@@ -334,12 +335,14 @@ public class DesktopFrame extends JFrame implements SequenceProvider
         }
     }
 
-    private float getMasterSpeedMultiplier()
+    private float getMasterSpeedDivider ()
     {
-        float speedMult = (float)speedAdjust.getValue()/-3.0f;
-        if (speedMult < 0)
-            return -1.0f/speedMult;
-        return 1.0f + speedMult;
+        float[] vals = new float[]
+                {
+                        0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f,
+                        1.2f, 1.3f, 1.5f, 1.8f, 2.0f, 2.5f, 3.0f, 3.5f, 4.0f, 5.0f
+                };
+        return vals[speedAdjust.getValue()];
     }
 
     /**
@@ -361,7 +364,7 @@ public class DesktopFrame extends JFrame implements SequenceProvider
     {
         if (ar.isEmpty())
             return null;
-        float speedMult = getMasterSpeedMultiplier();
+        float speedMult = getMasterSpeedDivider();
         int lastprogram = -1;
         try
         {
@@ -401,7 +404,7 @@ public class DesktopFrame extends JFrame implements SequenceProvider
                     {
                         continue;
                     }
-                    ev.setTick((int)((ev.getTick() + offset)*speedMult));
+                    ev.setTick((int)((ev.getTick() + offset)/speedMult));
                     t_out.add(ev);
                 }
                 if (!add)
