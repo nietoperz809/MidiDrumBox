@@ -7,7 +7,7 @@ class EventIdPair
      */
     public long getKeyOnId ()
     {
-        return event_id;
+        return eventOnId;
     }
 
     /**
@@ -16,7 +16,7 @@ class EventIdPair
      */
     public long getKeyOffId ()
     {
-        return event_id2;
+        return eventOffId;
     }
 
     /**
@@ -44,17 +44,17 @@ class EventIdPair
         return e%2 == 0;
     }
 
-    private final long event_id;
-    private final long event_id2;
+    private final long eventOnId;
+    private final long eventOffId;
 
     /**
      * Create EventIdPair
-     * @param x Number of Button in every  DrumPanel (Column)
+     * @param x Number of Button in every  DrumLinePanel (Column)
      * @param y Number of DrumPanels in DrumBox (Row)
      */
     EventIdPair (int x, int y)
     {
-        event_id = y * 100 + x * 2;
-        event_id2 = event_id + 1;
+        eventOnId = y * 100 + x * 2;
+        eventOffId = eventOnId + 1;
     }
 }

@@ -2,29 +2,34 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 
-class DrumPanel extends JPanel
+class DrumLinePanel extends JPanel
 {
-    final ArrayList<JToggleButton> toggleButtons = new ArrayList<>();
-    private final int linenumber;
-    JComboBox combo;
+    final ArrayList<JToggleButton> drumPads = new ArrayList<>();
+    private final int lineNumber;
+    JComboBox instrumentSelector;
     private final Drumbox drumbox;
 
-    DrumPanel (int line, Drumbox parent)
+    /**
+     * Constructor
+     * @param line Drumpanel number
+     * @param parent Ref to parent Drumbox
+     */
+    DrumLinePanel (int line, Drumbox parent)
     {
         drumbox = parent;
-        linenumber = line;
+        lineNumber = line;
     }
 
-    Component addToggleButton (JToggleButton j)
+    Component addDrumPad (JToggleButton j)
     {
-        toggleButtons.add(j);
+        drumPads.add(j);
         return add(j);
     }
 
 
-    Component addComboBox (JComboBox j)
+    Component addInstrumentSelector (JComboBox j)
     {
-        combo = j;
+        instrumentSelector = j;
         return add(j);
     }
 
@@ -32,11 +37,11 @@ class DrumPanel extends JPanel
     {
         j.addActionListener(e ->
         {
-            for (int s=0; s<toggleButtons.size(); s++)
+            for (int s = 0; s< drumPads.size(); s++)   // Do for all buttons of this line
             {
-                EventIdPair ev = new EventIdPair(s, linenumber);
+                EventIdPair ev = new EventIdPair(s, lineNumber);
                 drumbox.deleteEvent(ev);
-                JToggleButton b1 = toggleButtons.get(s);
+                JToggleButton b1 = drumPads.get(s);
                 b1.setSelected(false);
                 b1.setToolTipText(null);
             }
