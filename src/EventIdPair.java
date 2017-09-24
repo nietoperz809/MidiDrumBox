@@ -49,7 +49,7 @@ class EventIdPair
 
     /**
      * Create EventIdPair
-     * @param x Number of Button in every  DrumLinePanel (Column)
+     * @param x Number of Button in every  DrumPadLine (Column)
      * @param y Number of DrumPanels in DrumBox (Row)
      */
     EventIdPair (int x, int y)

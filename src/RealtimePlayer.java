@@ -13,15 +13,24 @@ public class RealtimePlayer
     // --Commented out by Inspection (8/2/2017 9:20 PM):private MidiChannel cc;
     private final ShortMessage msg = new ShortMessage();
     private Receiver receiver = null;
+    private AudioSynthesizer synth;
+    private static RealtimePlayer player = null;
 
-    public RealtimePlayer ()
+    public static RealtimePlayer get()
+    {
+        if (player == null)
+            player = new RealtimePlayer();
+        return player;
+    }
+
+    private RealtimePlayer ()
     {
         try
         {
-            AudioSynthesizer synthesizer = (AudioSynthesizer) MidiSystem.getSynthesizer();
+            synth = (AudioSynthesizer) MidiSystem.getSynthesizer();
             //instruments = synthesizer.getDefaultSoundbank().getInstruments();
-            receiver = synthesizer.getReceiver();
-            synthesizer.open();
+            receiver = synth.getReceiver();
+            synth.open();
         }
         catch (Exception e)
         {

@@ -5,6 +5,8 @@ import javax.sound.midi.*;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -16,19 +18,17 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
     private static final int LINES = 10;
     private static int instanceNumber = 0;
     private final JSlider noteLengthSlider = new JSlider();
-    private final JSlider volSlider = new JSlider();
+    final JSlider volSlider = new JSlider();
    // private final Sequencer sequencer;
     private final JInternalFrame mdiClient;
     private final JSlider speedSlider = new JSlider();  // Speed for this pattern
     private final JTextField loopCount = new JTextField();
-    private final DrumLinePanel[] drumPanels = new DrumLinePanel[LINES];
+    private final DrumPadLine[] drumPanels = new DrumPadLine[LINES];
     private final FileNameExtensionFilter drumBoxFileFilter = new FileNameExtensionFilter("Drum Pattern",
             "drmp");
     private HashMap<Long, SerMidEvent> eventMap = new HashMap<>();   // The event list
-    private int drumSteps = 32; // Number of drumSteps
+    int drumSteps = 32; // Number of drumSteps
     private JComboBox<String> drumKits;
-
-    private static final RealtimePlayer directPlayer = new RealtimePlayer();
 
     /**
      * Constructor: Build complete frame and show it
@@ -43,7 +43,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
         //sequencer = MidiSystem.getSequencer();
         for (int s = 0; s < LINES; s++)
         {
-            drumPanels[s] = makeDrumLinePanel(s);
+            drumPanels[s] = new DrumPadLine(s, this);
             this.add(drumPanels[s]);
         }
         this.add(makeControlPanel());
@@ -88,44 +88,6 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
     }
 
     /**
-     * Create Panel for one Instrument
-     *
-     * @param lineNumber Y-coordinate of panel
-     * @return The panel
-     */
-    private DrumLinePanel makeDrumLinePanel (int lineNumber)
-    {
-        DrumLinePanel panel = new DrumLinePanel(lineNumber, this);
-        panel.setBorder(BorderFactory.createEmptyBorder());
-
-        panel.setBackground(Color.BLACK);
-        FlowLayout la = new FlowLayout(FlowLayout.LEFT, 0, 0);
-        panel.setLayout(la);
-
-        AtomicInteger instrument = new AtomicInteger(-1);
-
-        JComboBox<String> combo = new JComboBox<>(DrumKit.instrumentNames);
-        combo.setSelectedIndex(lineNumber + 8); // begin with base drum
-        getInstrument(combo, instrument);
-        combo.addActionListener(e ->
-        {
-            getInstrument(combo, instrument);
-            System.out.println("Instrument: " + instrument.get());
-        });
-        panel.addInstrumentSelector(combo);
-
-        JButton but = new JButton("Clear");
-        but.setMargin(new Insets(0, 0, 0, 0));
-        panel.addClearButton(but);
-
-        for (int buttonNo = 0; buttonNo < drumSteps; buttonNo++)
-        {
-            panel.addDrumPad(createToggleButton(buttonNo, lineNumber, instrument));
-        }
-        return panel;
-    }
-
-    /**
      * Create control panel
      *
      * @return The panel
@@ -166,7 +128,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
         drumKits.addActionListener(e ->
         {
             int kit = DrumKit.readNumber((String) drumKits.getSelectedItem());
-            directPlayer.setInstrument(kit);
+            RealtimePlayer.get().setInstrument(kit);
         });
         panel.add(drumKits);
 
@@ -226,8 +188,26 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
         panel.add(speedSlider);
         panel.add(noteLengthSlider);
         panel.add(volSlider);
-
         panel.add(loopCount);
+
+        JButton random = new JButton("RND");
+        random.setToolTipText("Random Pattern");
+        random.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed (ActionEvent e)
+            {
+                int loops = (int)Math.sqrt(LINES*drumSteps);
+                for (int s=0; s<loops; s++)
+                {
+                    int y = (int) (Math.random() * LINES);
+                    int x = (int) (Math.random() * drumSteps);
+                    JToggleButton jb = drumPanels[y].drumPads.get(x);
+                    jb.doClick();
+                }
+            }
+        });
+        panel.add (random);
 
         return panel;
     }
@@ -268,58 +248,10 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
      * @param combo      Source
      * @param instrument Destination
      */
-    private void getInstrument (JComboBox combo, AtomicInteger instrument)
+    public void getInstrument (JComboBox combo, AtomicInteger instrument)
     {
         int i = DrumKit.readNumber((String) combo.getSelectedItem());
         instrument.set(i);
-    }
-
-    /**
-     * Create a drum ToggleButton
-     *
-     * @param buttonNumber Number of button in line (ascending, begins at 0)
-     * @param lineNumber   Number of butten line (also 0-based)
-     * @param instrument   Instrument number used by this drum line
-     * @return The toggle button
-     */
-    private JToggleButton createToggleButton (int buttonNumber,
-                                              int lineNumber,
-                                              AtomicInteger instrument)
-    {
-        JToggleButton jb = new JToggleButton();
-        jb.setMargin(new Insets(0, 0, 0, 0));
-        jb.setMnemonic(buttonNumber);
-        jb.setPreferredSize(new Dimension(20, 20));
-        jb.addActionListener(e ->
-        {
-            EventIdPair ev = new EventIdPair(jb.getMnemonic(), lineNumber);
-            if (jb.isSelected())
-            {
-                try
-                {
-                    int instr = instrument.get();
-                    directPlayer.play(instr);
-                    SerShortMessage on = new SerShortMessage(ShortMessage.NOTE_ON,
-                            9, instr, volSlider.getValue());
-                    SerShortMessage off = new SerShortMessage(ShortMessage.NOTE_OFF,
-                            9, instr, 0);
-                    putEvent(ev.getKeyOnId(), new SerMidEvent(on, buttonNumber));
-                    putEvent(ev.getKeyOffId(), new SerMidEvent(off, buttonNumber));
-                    jb.setToolTipText(DrumLinePanel.createTooltipText(instr, volSlider.getValue()));
-                }
-                catch (Exception e1)
-                {
-                    System.out.println(e1);
-                }
-            }
-            else
-            {
-                deleteEvent(ev);
-                jb.setToolTipText(null);
-            }
-        });
-        jb.setBorder(BorderFactory.createLineBorder(Color.GREEN, 1));
-        return jb;
     }
 
     /**
@@ -414,7 +346,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
         drumKits.setSelectedIndex(drumset);
         adjustDrumLineLength(drumSteps);
         // switch buttons off
-//        for (DrumLinePanel p : drumPanels)
+//        for (DrumPadLine p : drumPanels)
 //        {
 //            p.clearButton.doClick();
 //        }
@@ -428,7 +360,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
                 SerMidEvent ev = eventMap.get(k); // get the event
                 int instrument = ((SerShortMessage) ev.getMessage()).getData1();
                 int volume = ((SerShortMessage) ev.getMessage()).getData2();
-                DrumLinePanel panel = drumPanels[linenum];
+                DrumPadLine panel = drumPanels[linenum];
                 setInstrument(panel.instrumentSelector, instrument);
                 for (JToggleButton toggleButton : panel.drumPads)
                 {
@@ -436,7 +368,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
                     {
                         toggleButton.setSelected(true);
                         toggleButton.setToolTipText(
-                                DrumLinePanel.createTooltipText(instrument, volume));
+                                DrumPadLine.createTooltipText(instrument, volume));
                         break;
                     }
                 }
@@ -452,7 +384,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
      */
     private void adjustDrumLineLength (int val)
     {
-        for (DrumLinePanel p : drumPanels)
+        for (DrumPadLine p : drumPanels)
         {
             for (int s = 0; s < 32; s++)
             {
@@ -568,7 +500,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
      * @param key Event key
      * @param ev  The Event himself
      */
-    private void putEvent (long key, SerMidEvent ev)
+    void putEvent (long key, SerMidEvent ev)
     {
         System.out.println("put: " + key);
         eventMap.put(key, ev);
@@ -579,7 +511,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
      *
      * @param key Event key
      */
-    private void deleteEvent (long key)
+    void deleteEvent (long key)
     {
         SerMidEvent e1 = eventMap.remove(key);
         if (e1 != null)

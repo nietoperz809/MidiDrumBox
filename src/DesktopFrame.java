@@ -1,5 +1,7 @@
 // Fig. 22.11: DesktopFrame.java
 // Demonstrating JDesktopPane.
+import splitterdialog.GUI;
+
 import javax.sound.midi.*;
 import javax.swing.*;
 import javax.swing.event.InternalFrameAdapter;
@@ -65,6 +67,11 @@ public class DesktopFrame extends JFrame implements SequenceProvider
         psave.addActionListener(event -> saveProject());
         saveold.addActionListener(event -> saveCurrentProject());
 
+        JMenu toolsMenu = new JMenu ("Tools");
+        JMenuItem splitter = new JMenuItem("Splitter");
+        toolsMenu.add (splitter);
+        splitter.addActionListener(e -> GUI.main(null)); // Run splitter
+
         docMenu = new JMenu("Patterns"); // create Add menu
 
         actionMenu.add(newFrame); // add new frame item to Add menu
@@ -77,6 +84,7 @@ public class DesktopFrame extends JFrame implements SequenceProvider
         bar.add(actionMenu); // add Add menu to menu bar
         bar.add(projMenu);
         bar.add(docMenu);
+        bar.add (toolsMenu);
         setJMenuBar(bar); // set menu bar for this application
 
         theDesktop = new JDesktopPane(); // create desktop pane
@@ -197,7 +205,7 @@ public class DesktopFrame extends JFrame implements SequenceProvider
         p2.add(notesOnly);
 
         JButton butt = new JButton("Create MIDI");
-        butt.setToolTipText("Ceate and save MIDI file.");
+        butt.setToolTipText("Create and save MIDI file.");
         p2.add(butt);
         butt.addActionListener(e -> saveMidi(getArrangement()));
 
