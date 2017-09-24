@@ -2,6 +2,8 @@ package splitterdialog;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.*;
+import java.awt.event.WindowAdapter;
 import java.io.File;
 
 /*
@@ -14,14 +16,14 @@ import java.io.File;
  *
  * @author Administrator
  */
-public class GUI extends javax.swing.JDialog
+public class SplitterDialog extends javax.swing.JDialog
 {
     /**
-     * Creates new form GUI
+     * Creates new form SplitterDialog
      */
-    public GUI(java.awt.Frame parent, boolean modal)
+    private SplitterDialog (Frame parent)
     {
-        super(parent, modal);
+        super(parent, false);
         initComponents();
         setTitle("MIDI splitter!");
     }
@@ -36,63 +38,45 @@ public class GUI extends javax.swing.JDialog
     private void initComponents()
     {
 
-        jButton1 = new javax.swing.JButton();
+        JButton jButton1 = new JButton();
         inputFilePath = new javax.swing.JLabel();
-        jSeparator1 = new javax.swing.JSeparator();
-        jButton2 = new javax.swing.JButton();
+        JSeparator jSeparator1 = new JSeparator();
+        JButton jButton2 = new JButton();
         outputDir = new javax.swing.JLabel();
-        jButton3 = new javax.swing.JButton();
+        JButton jButton3 = new JButton();
         rebaseCheck = new javax.swing.JCheckBox();
-        jLabel1 = new javax.swing.JLabel();
+        JLabel jLabel1 = new JLabel();
         transposeText = new javax.swing.JTextField();
-        jLabel2 = new javax.swing.JLabel();
+        JLabel jLabel2 = new JLabel();
         onlyDrums = new javax.swing.JCheckBox();
         chordCheck = new javax.swing.JCheckBox();
         chordDurCheck = new javax.swing.JCheckBox();
-        jScrollPane1 = new javax.swing.JScrollPane();
+        JScrollPane jScrollPane1 = new JScrollPane();
         outputField = new javax.swing.JTextArea();
-        jLabel3 = new javax.swing.JLabel();
+        JLabel jLabel3 = new JLabel();
         speedFactorText = new javax.swing.JTextField();
         notesOnlyCheck = new javax.swing.JCheckBox();
-        jButtonReverseNotes = new javax.swing.JButton();
-        jButton4 = new javax.swing.JButton();
-        jButton5 = new javax.swing.JButton();
+        JButton jButtonReverseNotes = new JButton();
+        JButton jButton4 = new JButton();
+        JButton jButton5 = new JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setBackground(new java.awt.Color(0, 204, 204));
 
         jButton1.setText("Select File");
-        jButton1.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
-                jButton1ActionPerformed(evt);
-            }
-        });
+        jButton1.addActionListener(evt -> jButton1ActionPerformed());
 
         inputFilePath.setBackground(new java.awt.Color(255, 255, 51));
         inputFilePath.setText("no file selected");
 
         jButton2.setText("Output Dir");
-        jButton2.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
-                jButton2ActionPerformed(evt);
-            }
-        });
+        jButton2.addActionListener(evt -> jButton2ActionPerformed());
 
         outputDir.setBackground(new java.awt.Color(153, 204, 255));
         outputDir.setText("C:\\");
 
             jButton3.setText("Do It!");
-            jButton3.addActionListener(new java.awt.event.ActionListener()
-            {
-                public void actionPerformed(java.awt.event.ActionEvent evt)
-                {
-                    jButton3ActionPerformed(evt);
-                }
-            });
+            jButton3.addActionListener(evt -> jButton3ActionPerformed());
 
             rebaseCheck.setSelected(true);
             rebaseCheck.setText("Rebase");
@@ -106,22 +90,10 @@ public class GUI extends javax.swing.JDialog
             onlyDrums.setText("Only Drums");
 
             chordCheck.setText("ChordMoll");
-            chordCheck.addActionListener(new java.awt.event.ActionListener()
-            {
-                public void actionPerformed(java.awt.event.ActionEvent evt)
-                {
-                    chordCheckActionPerformed(evt);
-                }
-            });
+            chordCheck.addActionListener(evt -> chordCheckActionPerformed());
 
             chordDurCheck.setText("ChordDur");
-            chordDurCheck.addActionListener(new java.awt.event.ActionListener()
-            {
-                public void actionPerformed(java.awt.event.ActionEvent evt)
-                {
-                    chordDurCheckActionPerformed(evt);
-                }
-            });
+            chordDurCheck.addActionListener(evt -> chordDurCheckActionPerformed());
 
             outputField.setEditable(false);
             outputField.setColumns(20);
@@ -138,31 +110,13 @@ public class GUI extends javax.swing.JDialog
             notesOnlyCheck.setText("Notes Only");
 
             jButtonReverseNotes.setText("Rev Track");
-            jButtonReverseNotes.addActionListener(new java.awt.event.ActionListener()
-            {
-                public void actionPerformed(java.awt.event.ActionEvent evt)
-                {
-                    jButtonReverseNotesActionPerformed(evt);
-                }
-            });
+            jButtonReverseNotes.addActionListener(evt -> jButtonReverseNotesActionPerformed());
 
             jButton4.setText("Rev Octave");
-            jButton4.addActionListener(new java.awt.event.ActionListener()
-            {
-                public void actionPerformed(java.awt.event.ActionEvent evt)
-                {
-                    jButton4ActionPerformed(evt);
-                }
-            });
+            jButton4.addActionListener(evt -> jButton4ActionPerformed());
 
             jButton5.setText("Swap-3");
-            jButton5.addActionListener(new java.awt.event.ActionListener()
-            {
-                public void actionPerformed(java.awt.event.ActionEvent evt)
-                {
-                    jButton5ActionPerformed(evt);
-                }
-            });
+            jButton5.addActionListener(evt -> jButton5ActionPerformed());
 
             javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
             getContentPane().setLayout(layout);
@@ -253,7 +207,7 @@ public class GUI extends javax.swing.JDialog
             pack();
         }// </editor-fold>//GEN-END:initComponents
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButton1ActionPerformed
+    private void jButton1ActionPerformed ()//GEN-FIRST:event_jButton1ActionPerformed
     {//GEN-HEADEREND:event_jButton1ActionPerformed
         final JFileChooser fc = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Midi files",
@@ -281,7 +235,7 @@ public class GUI extends javax.swing.JDialog
         }
     }//GEN-LAST:event_jButton1ActionPerformed
 
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButton2ActionPerformed
+    private void jButton2ActionPerformed ()//GEN-FIRST:event_jButton2ActionPerformed
     {//GEN-HEADEREND:event_jButton2ActionPerformed
         final JFileChooser fc = new JFileChooser();
         fc.setFileSelectionMode (JFileChooser.DIRECTORIES_ONLY);
@@ -300,7 +254,7 @@ public class GUI extends javax.swing.JDialog
         }
     }//GEN-LAST:event_jButton2ActionPerformed
 
-    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButton3ActionPerformed
+    private void jButton3ActionPerformed ()//GEN-FIRST:event_jButton3ActionPerformed
     {//GEN-HEADEREND:event_jButton3ActionPerformed
         SplitterConfig cfg = new SplitterConfig
                 (
@@ -325,12 +279,12 @@ public class GUI extends javax.swing.JDialog
         }
     }//GEN-LAST:event_jButton3ActionPerformed
 
-    private void chordCheckActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_chordCheckActionPerformed
+    private void chordCheckActionPerformed ()//GEN-FIRST:event_chordCheckActionPerformed
     {//GEN-HEADEREND:event_chordCheckActionPerformed
         chordDurCheck.setSelected(false);
     }//GEN-LAST:event_chordCheckActionPerformed
 
-    private void chordDurCheckActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_chordDurCheckActionPerformed
+    private void chordDurCheckActionPerformed ()//GEN-FIRST:event_chordDurCheckActionPerformed
     {//GEN-HEADEREND:event_chordDurCheckActionPerformed
         chordCheck.setSelected(false);
     }//GEN-LAST:event_chordDurCheckActionPerformed
@@ -348,65 +302,31 @@ public class GUI extends javax.swing.JDialog
         }
     }
 
-    private void jButtonReverseNotesActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButtonReverseNotesActionPerformed
+    private void jButtonReverseNotesActionPerformed ()//GEN-FIRST:event_jButtonReverseNotesActionPerformed
     {//GEN-HEADEREND:event_jButtonReverseNotesActionPerformed
         reverser (NoteReverser.Modus.REV_TRACK);
     }//GEN-LAST:event_jButtonReverseNotesActionPerformed
 
-    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButton4ActionPerformed
+    private void jButton4ActionPerformed ()//GEN-FIRST:event_jButton4ActionPerformed
     {//GEN-HEADEREND:event_jButton4ActionPerformed
         reverser (NoteReverser.Modus.REV_OCTAVE);
     }//GEN-LAST:event_jButton4ActionPerformed
 
-    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jButton5ActionPerformed
+    private void jButton5ActionPerformed ()//GEN-FIRST:event_jButton5ActionPerformed
     {//GEN-HEADEREND:event_jButton5ActionPerformed
         reverser (NoteReverser.Modus.SWAP3);
     }//GEN-LAST:event_jButton5ActionPerformed
 
     /**
-     * @param args the command line arguments
+     * @param parent window
      */
-    public static void main(String args[])
+    public static void start (JFrame parent)
     {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
-         */
-        try
-        {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels())
-            {
-                if ("Nimbus".equals(info.getName()))
-                {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        }
-        catch (ClassNotFoundException ex)
-        {
-            java.util.logging.Logger.getLogger(GUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        catch (InstantiationException ex)
-        {
-            java.util.logging.Logger.getLogger(GUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        catch (IllegalAccessException ex)
-        {
-            java.util.logging.Logger.getLogger(GUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        catch (javax.swing.UnsupportedLookAndFeelException ex)
-        {
-            java.util.logging.Logger.getLogger(GUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
         /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(() ->
         {
-            GUI dialog = new GUI(new javax.swing.JFrame(), true);
-            dialog.addWindowListener(new java.awt.event.WindowAdapter()
+            SplitterDialog dialog = new SplitterDialog(parent);
+            dialog.addWindowListener(new WindowAdapter()
             {
                 @Override
                 public void windowClosing(java.awt.event.WindowEvent e)
@@ -422,17 +342,6 @@ public class GUI extends javax.swing.JDialog
     private javax.swing.JCheckBox chordCheck;
     private javax.swing.JCheckBox chordDurCheck;
     private javax.swing.JLabel inputFilePath;
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
-    private javax.swing.JButton jButton4;
-    private javax.swing.JButton jButton5;
-    private javax.swing.JButton jButtonReverseNotes;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JSeparator jSeparator1;
     private javax.swing.JCheckBox notesOnlyCheck;
     private javax.swing.JCheckBox onlyDrums;
     private javax.swing.JLabel outputDir;

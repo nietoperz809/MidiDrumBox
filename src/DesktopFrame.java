@@ -1,6 +1,6 @@
 // Fig. 22.11: DesktopFrame.java
 // Demonstrating JDesktopPane.
-import splitterdialog.GUI;
+import splitterdialog.SplitterDialog;
 
 import javax.sound.midi.*;
 import javax.swing.*;
@@ -32,7 +32,7 @@ public class DesktopFrame extends JFrame implements SequenceProvider
     private JSlider speedAdjust;
     private String currentProjectPath = null;
 
-    // set up GUI
+    // set up SplitterDialog
     private DesktopFrame ()
     {
         super(title);
@@ -70,7 +70,7 @@ public class DesktopFrame extends JFrame implements SequenceProvider
         JMenu toolsMenu = new JMenu ("Tools");
         JMenuItem splitter = new JMenuItem("Splitter");
         toolsMenu.add (splitter);
-        splitter.addActionListener(e -> GUI.main(null)); // Run splitter
+        splitter.addActionListener(e -> SplitterDialog.start(this)); // Run splitter
 
         docMenu = new JMenu("Patterns"); // create Add menu
 

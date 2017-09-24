@@ -3,7 +3,7 @@ package splitterdialog;
 import javax.sound.midi.*;
 import java.io.File;
 
-public class MidiMaker
+class MidiMaker
 {
     private static final String[] NOTE_NAMES =
             {

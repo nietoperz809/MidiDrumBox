@@ -1,6 +1,6 @@
 package splitterdialog;
 
-public class SplitterConfig
+class SplitterConfig
 {
     final boolean rebase;
     final double speedFactor;

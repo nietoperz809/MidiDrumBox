@@ -7,7 +7,7 @@ import java.util.HashMap;
 /**
  * Created by Administrator on 7/19/2017.
  */
-public class Splitter
+class Splitter
 {
     private final Sequence template;
     private final HashMap<Integer, Sequence> hm = new HashMap<>();

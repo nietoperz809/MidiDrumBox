@@ -105,7 +105,7 @@ import java.io.File;
  </formalpara>
 
  */
-public class MidiFileInfo
+class MidiFileInfo
 {
     private static JTextArea m_out;
 
@@ -117,7 +117,7 @@ public class MidiFileInfo
 
     public void doIt (String strSource) throws Exception
     {
-        Sequence sequence = null;
+        Sequence sequence;
         File file = new File(strSource);
         MidiFileFormat fileFormat = MidiSystem.getMidiFileFormat(file);
         String strFilename = file.getCanonicalPath();
@@ -152,7 +152,7 @@ public class MidiFileInfo
 
         out("DivisionType: " + strDivisionType);
 
-        String strResolutionType = null;
+        String strResolutionType;
         if (fileFormat.getDivisionType() == Sequence.PPQ)
         {
             strResolutionType = " ticks per beat";
@@ -163,7 +163,7 @@ public class MidiFileInfo
         }
         out("Resolution: " + fileFormat.getResolution() + strResolutionType);
 
-        String strFileLength = null;
+        String strFileLength;
         if (fileFormat.getByteLength() != MidiFileFormat.UNKNOWN_LENGTH)
         {
             strFileLength = "" + fileFormat.getByteLength() + " bytes";

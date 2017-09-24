@@ -74,7 +74,7 @@ public class NoteReverser
         MidiSystem.write(newSeq, 1, f);
     }
 
-    private void reverse (Sequence seq, Track in, List<MidiEvent> noteList) throws Exception
+    private void reverse (Sequence seq, Track in, List<MidiEvent> noteList)
     {
         Track out = seq.createTrack();
         for (int i = 0; i < noteList.size(); i++)
