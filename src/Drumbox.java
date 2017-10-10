@@ -5,8 +5,6 @@ import javax.sound.midi.*;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -71,7 +69,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
      * @param reader Objectreader
      * @throws Exception smth failed
      */
-    public Drumbox (JInternalFrame frame, ObjectReader reader) throws Exception
+    public Drumbox (JInternalFrame frame, ObjectReader reader)
     {
         this(frame);
         loadPattern(reader);
@@ -192,19 +190,14 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
 
         JButton random = new JButton("RND");
         random.setToolTipText("Random Pattern");
-        random.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed (ActionEvent e)
+        random.addActionListener(e -> {
+            int loops = (int)Math.sqrt(LINES*drumSteps);
+            for (int s=0; s<loops; s++)
             {
-                int loops = (int)Math.sqrt(LINES*drumSteps);
-                for (int s=0; s<loops; s++)
-                {
-                    int y = (int) (Math.random() * LINES);
-                    int x = (int) (Math.random() * drumSteps);
-                    JToggleButton jb = drumPanels[y].drumPads.get(x);
-                    jb.doClick();
-                }
+                int y = (int) (Math.random() * LINES);
+                int x = (int) (Math.random() * drumSteps);
+                JToggleButton jb = drumPanels[y].drumPads.get(x);
+                jb.doClick();
             }
         });
         panel.add (random);
@@ -442,7 +435,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
         }
     }
 
-    private void loadPattern (String filename) throws Exception
+    private void loadPattern (String filename)
     {
         ObjectReader r = new ObjectReader(filename);
         loadPattern(r);
@@ -511,7 +504,7 @@ public class Drumbox extends JPanel implements Serializable, SequenceProvider
      *
      * @param key Event key
      */
-    void deleteEvent (long key)
+    private void deleteEvent (long key)
     {
         SerMidEvent e1 = eventMap.remove(key);
         if (e1 != null)

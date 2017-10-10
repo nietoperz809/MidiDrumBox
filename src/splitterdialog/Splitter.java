@@ -9,20 +9,20 @@ import java.util.HashMap;
  */
 class Splitter
 {
-    private final Sequence template;
-    private final HashMap<Integer, Sequence> hm = new HashMap<>();
-    private final SplitterConfig cfg;
+    private final Sequence sequenceTemplate;
+    private final HashMap<Integer, Sequence> sequenceMap = new HashMap<>();
+    private final SplitterConfig splitterConfig;
 
     /**
      * Contructor
      *
-     * @param temp Parent sequence that is used as template
+     * @param temp Parent sequence that is used as sequenceTemplate
      * @param cfg  Configuration values
      */
     public Splitter (Sequence temp, SplitterConfig cfg)
     {
-        template = temp;
-        this.cfg = cfg;
+        sequenceTemplate = temp;
+        this.splitterConfig = cfg;
     }
 
     /**
@@ -33,15 +33,15 @@ class Splitter
      */
     public void insert (MidiEvent evt, int channel) throws Exception
     {
-        if (cfg.onlyDrums && channel != 10)
+        if (splitterConfig.onlyDrums && channel != 10)
             return;
-        Sequence s = hm.get(channel);
+        Sequence s = sequenceMap.get(channel);
         if (s == null)
         {
-            Sequence newSeq = new Sequence(template.getDivisionType(), template.getResolution());
+            Sequence newSeq = new Sequence(sequenceTemplate.getDivisionType(), sequenceTemplate.getResolution());
             Track t = newSeq.createTrack();
             t.add(evt);
-            hm.put(channel, newSeq);
+            sequenceMap.put(channel, newSeq);
         }
         else
         {
@@ -57,17 +57,17 @@ class Splitter
     public void save (String directory) throws Exception
     {
         int tracknum = 0;
-        for (Sequence sequence : hm.values())
+        for (Sequence sequence : sequenceMap.values())
         {
-            if (cfg.rebase)
+            if (splitterConfig.rebase)
                 adjustTimebase(sequence);
-            if (cfg.speedFactor != 1.0)
+            if (splitterConfig.speedFactor != 1.0)
                 changeSpeed(sequence);
-            if (cfg.transpose != 0)
+            if (splitterConfig.transpose != 0)
                 transposeTrack(sequence);
-            if (cfg.chord)
+            if (splitterConfig.chord)
                 makeChord(sequence, true);
-            else if (cfg.dur)
+            else if (splitterConfig.dur)
                 makeChord(sequence, false); 
             tracknum++;
             File f = new File(directory + "\\miditrack" + tracknum
@@ -87,7 +87,7 @@ class Splitter
         {
             MidiEvent me = t.get(i);
             double tick = me.getTick();
-            me.setTick((long)(tick/cfg.speedFactor));
+            me.setTick((long)(tick/ splitterConfig.speedFactor));
         }
     }
 
@@ -116,7 +116,7 @@ class Splitter
      */
     private void transposeTrack (Sequence s) throws Exception
     {
-        int val = cfg.transpose*12;
+        int val = splitterConfig.transpose*12;
         Track t = s.getTracks()[0];
         for (int i = 0; i < t.size(); i++)
         {

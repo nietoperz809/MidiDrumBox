@@ -1,4 +1,4 @@
-import com.sun.media.sound.AudioSynthesizer;
+//import com.sun.media.sound.*;
 
 import javax.sound.midi.*;
 
@@ -13,7 +13,7 @@ public class RealtimePlayer
     // --Commented out by Inspection (8/2/2017 9:20 PM):private MidiChannel cc;
     private final ShortMessage msg = new ShortMessage();
     private Receiver receiver = null;
-    private AudioSynthesizer synth;
+    private Synthesizer synth;
     private static RealtimePlayer player = null;
 
     public static RealtimePlayer get()
@@ -27,7 +27,7 @@ public class RealtimePlayer
     {
         try
         {
-            synth = (AudioSynthesizer) MidiSystem.getSynthesizer();
+            synth = (Synthesizer) MidiSystem.getSynthesizer();
             //instruments = synthesizer.getDefaultSoundbank().getInstruments();
             receiver = synth.getReceiver();
             synth.open();
